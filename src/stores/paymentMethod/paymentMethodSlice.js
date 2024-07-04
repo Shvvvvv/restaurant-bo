@@ -39,6 +39,10 @@ export const removePayment = doDelete(
   "DELETE_PAYMENT",
   "metode-pembayaran/delete",
 );
+export const getResourcePayment = get(
+  "GET_RESOURCE_PAYMENT",
+  "metode-pembayaran/resource",
+);
 
 const paymentMethodSlice = createSlice({
   name: "paymentMethod",

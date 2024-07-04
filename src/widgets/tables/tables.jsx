@@ -65,6 +65,9 @@ export function Tables({
     return columns.map((col, index) => (
       <td
         className="border-b border-blue-gray-50 py-3 px-5 text-left"
+        style={{
+          textWrap: "nowrap",
+        }}
         key={index}
       >
         {!children[col.key]

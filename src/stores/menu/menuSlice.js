@@ -26,6 +26,7 @@ export const createMenu = postFormData("CREATE_MENU", "menu/create");
 export const deleteMenu = doDelete("DELETE_MENU", "menu/delete");
 export const getMenu = get("GET_MENU_BY_ID", "menu/menu-by-id");
 export const updateMenu = putFormData("EDIT_MENU", "menu/update");
+export const getResourceMenu = get("GET_RESOURCE_MENU", "menu/resource");
 
 const menuSlice = createSlice({
   name: "menu",

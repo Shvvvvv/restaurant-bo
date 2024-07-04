@@ -1,28 +1,36 @@
-import { doDelete, get, postFormData, putFormData } from "@/configs/http";
+import {
+  doDelete,
+  get,
+  post,
+  postFormData,
+  put,
+  putFormData,
+} from "@/configs/http";
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   listVisit: [],
   paging: {
-    search_key: "",
     pages: 1,
-    limit: 10,
+    limit: 5,
     count: 0,
-    sort_key: "id_metode_pembayaran",
+    sort_key: "id_kunjungan",
     sort_by: "desc",
   },
   loading: false,
+  loadingSingle: false,
   loadingTable: false,
   error: null,
   message: null,
   visit: null,
+  visitCreated: null,
 };
 
-const getVisit = get("GET_VISIT", "kunjungan/kunjungan-by-id");
-const getListVisit = get("GET_LIST_VISIT", "kunjungan/list-filter");
-const addVisit = postFormData("CREATE_VISIT", "kunjungan/create");
-const updateVisit = putFormData("EDIT_VISIT", "kunjungan/update");
-const removeVisit = doDelete("DELETE_VISIT", "kunjungan/delete");
+export const getVisit = get("GET_VISIT", "kunjungan/kunjungan-by-id");
+export const getListVisit = get("GET_LIST_VISIT", "kunjungan/list-filter");
+export const addVisit = post("CREATE_VISIT", "kunjungan/registrasi");
+export const updateVisit = put("EDIT_VISIT", "kunjungan/update");
+export const removeVisit = doDelete("DELETE_VISIT", "kunjungan/delete");
 
 const visitSlice = createSlice({
   name: "visit",
@@ -30,9 +38,8 @@ const visitSlice = createSlice({
   reducers: {
     clearPaging: (state) => {
       state.paging = {
-        search_key: "",
         pages: 1,
-        limit: 10,
+        limit: 5,
         count: 0,
         sort_key: "id_kunjungan",
         sort_by: "desc",
@@ -46,6 +53,9 @@ const visitSlice = createSlice({
     },
     clearVisit: (state) => {
       state.visit = null;
+    },
+    setPage: (state, action) => {
+      state.paging.pages = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -92,21 +102,22 @@ const visitSlice = createSlice({
 
     //add visit
     builder.addCase(addVisit.pending, (state) => {
-      state.loading = true;
+      state.loadingSingle = true;
       state.error = null;
     });
     builder.addCase(addVisit.fulfilled, (state, action) => {
-      state.loading = false;
+      state.loadingSingle = false;
       const res = action.payload;
       if (res.status) {
         state.message = res.message;
+        state.visitCreated = res.data;
         state.error = null;
       } else {
         state.error = res.message;
       }
     });
     builder.addCase(addVisit.rejected, (state, action) => {
-      state.loading = false;
+      state.loadingSingle = false;
       state.error = action.payload.message;
     });
 
@@ -152,6 +163,6 @@ const visitSlice = createSlice({
   },
 });
 
-export const { clearPaging, clearError, clearMessage, clearVisit } =
+export const { clearPaging, clearError, clearMessage, clearVisit, setPage } =
   visitSlice.actions;
 export default visitSlice.reducer;

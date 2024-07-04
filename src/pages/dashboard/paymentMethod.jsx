@@ -59,6 +59,7 @@ export function PaymentMethod() {
     search_key: "",
     jenis: "",
   });
+  const [activePage, setActivePage] = useState(1);
   const [payloadPayment, setPayloadPayment] = useState({
     nama_metode_pembayaran: "",
     kode: "",
@@ -568,6 +569,8 @@ export function PaymentMethod() {
         isLoading={loadingTable}
         paging={paging}
         children={children}
+        active={activePage}
+        setActive={setActivePage}
       />
     </ContainerPage>
   );

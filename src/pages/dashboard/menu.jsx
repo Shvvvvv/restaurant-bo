@@ -64,6 +64,7 @@ export function Menu() {
     kategori: "",
   });
   const [image, setImage] = useState(null);
+  const [activePage, setActivePage] = useState(1);
 
   const columnMenu = [
     {
@@ -454,6 +455,8 @@ export function Menu() {
           isLoading={loading}
           paging={paging}
           children={childrenTable}
+          active={activePage}
+          setActive={setActivePage}
         />
       </div>
     </>

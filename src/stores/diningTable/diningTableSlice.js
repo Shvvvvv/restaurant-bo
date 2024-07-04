@@ -24,6 +24,7 @@ const initialState = {
   error: null,
   message: null,
   diningTable: null,
+  resourceTable: [],
 };
 
 export const getDiningTable = get("GET_DINING_TABLE", "meja/meja-by-id");
@@ -34,6 +35,7 @@ export const getListDiningTable = get(
 export const addDiningTable = post("CREATE_DINING_TABLE", "meja/create");
 export const updateDiningTable = put("EDIT_DINING_TABLE", "meja/update");
 export const removeDiningTable = doDelete("DELETE_DINING_TABLE", "meja/delete");
+export const getResourceTable = get("GET_RESOURCE_TABLE", "meja/resource");
 
 const diningTableSlice = createSlice({
   name: "diningTable",

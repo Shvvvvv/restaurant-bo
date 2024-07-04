@@ -8,6 +8,7 @@ import {
 import { format } from "date-fns";
 import { Button, DayPicker } from "react-day-picker";
 import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { CalendarDaysIcon } from "@heroicons/react/24/solid";
 
 export default function DatePicker({ value, setDate, label }) {
   return (
@@ -15,16 +16,22 @@ export default function DatePicker({ value, setDate, label }) {
       <Popover placement="bottom">
         <PopoverHandler>
           <Input
+            required
             label={label}
             onChange={() => null}
             value={value ? format(value, "dd-MM-yyyy") : ""}
+            icon={
+              <PopoverHandler>
+                <CalendarDaysIcon role="button" />
+              </PopoverHandler>
+            }
           />
         </PopoverHandler>
         <PopoverContent className="z-50">
           <DayPicker
             mode="single"
             selected={value}
-            onSelect={(e) => setDate(e)}
+            onSelect={(e) => handleSelectedDateTime()}
             showOutsideDays
             className="border-0"
             classNames={{
@@ -57,6 +64,7 @@ export default function DatePicker({ value, setDate, label }) {
               IconRight: ({ ...props }) => (
                 <ChevronRightIcon {...props} className="h-4 w-4 stroke-2" />
               ),
+
               Footer: ({ ...props }) => (
                 <Button className="float-right" onClick={() => setDate(null)}>
                   Reset

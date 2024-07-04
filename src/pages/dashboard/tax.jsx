@@ -66,6 +66,7 @@ export function Tax() {
     keterangan: "",
   });
   const [isOpenModal, setIsOpenModal] = useState(false);
+  const [activePage, setActivePage] = useState(1);
 
   const children = {
     action: (data) => {
@@ -314,6 +315,8 @@ export function Tax() {
         isLoading={loadingTable}
         paging={paging}
         children={children}
+        active={activePage}
+        setActive={setActivePage}
       />
     </ContainerPage>
   );

@@ -60,6 +60,7 @@ export function DiningTable() {
     kapasitas: 0,
   });
   const [isOpenModal, setIsOpenModal] = useState(false);
+  const [activePage, setActivePage] = useState(1);
   const column = [
     {
       key: "no",
@@ -413,6 +414,8 @@ export function DiningTable() {
         isLoading={loadingTable}
         paging={paging}
         children={children}
+        active={activePage}
+        setActive={setActivePage}
       />
     </ContainerPage>
   );

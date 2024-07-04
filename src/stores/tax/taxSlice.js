@@ -31,6 +31,7 @@ export const getListTax = get("GET_LIST_TAX", "pajak/list-filter");
 export const addTax = post("CREATE_TAX", "pajak/create");
 export const updateTax = put("EDIT_TAX", "pajak/update");
 export const removeTax = doDelete("DELETE_TAX", "pajak/delete");
+export const getResourceTax = get("GET_RESOURCE_TAX", "pajak/resource");
 
 const taxSlice = createSlice({
   name: "tax",
