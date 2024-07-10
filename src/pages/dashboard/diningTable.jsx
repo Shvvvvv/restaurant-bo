@@ -243,6 +243,9 @@ export function DiningTable() {
 
   const closeFormDiningTable = () => {
     clearPayloadDiningTable();
+    if (diningTable) {
+      dispatch(clearDiningTable());
+    }
     setIsOpenModal(false);
   };
 
@@ -314,6 +317,7 @@ export function DiningTable() {
             />
             <div className="min-w-[200px] w-full">
               <Select
+                disabled={diningTable}
                 id="status-meja"
                 label="Status"
                 value={payloadDiningTable.status}
@@ -332,18 +336,22 @@ export function DiningTable() {
                 <Option value="3">Dipesan</Option>
               </Select>
             </div>
-            <Input
+            <Select
+              id="kapasitas-meja"
               label="Kapasitas"
-              type="number"
-              className="w-full"
               value={payloadDiningTable.kapasitas}
-              onChange={(e) =>
+              onChange={(val) => {
                 setPayloadDiningTable({
                   ...payloadDiningTable,
-                  kapasitas: e.target.value,
-                })
-              }
-            />
+                  kapasitas: val,
+                });
+              }}
+            >
+              <Option value={2}>2</Option>
+              <Option value={4}>4</Option>
+              <Option value={8}>8</Option>
+              <Option value={12}>12</Option>
+            </Select>
           </div>
         </DialogBody>
         <DialogFooter>

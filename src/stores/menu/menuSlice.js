@@ -1,4 +1,4 @@
-import { doDelete, get, postFormData, putFormData } from "@/configs/http";
+import { doDelete, get, post, postFormData, putFormData } from "@/configs/http";
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
@@ -19,6 +19,12 @@ const initialState = {
   message: null,
   successDelete: null,
   menu: null,
+  menuSales: null,
+  loadingMenu: false,
+  errorMenu: null,
+  messageMenu: null,
+  listMenuSales: [],
+  totalHargaMenu: 0,
 };
 
 export const getListMenu = get("GET_LIST_MENU", "menu/list-filter");
@@ -27,6 +33,11 @@ export const deleteMenu = doDelete("DELETE_MENU", "menu/delete");
 export const getMenu = get("GET_MENU_BY_ID", "menu/menu-by-id");
 export const updateMenu = putFormData("EDIT_MENU", "menu/update");
 export const getResourceMenu = get("GET_RESOURCE_MENU", "menu/resource");
+export const addMenuSales = post("CREATE_MENU_SALES", "penjualan-menu/update");
+export const getListMenuSales = get(
+  "GET_LIST_MENU_SALES",
+  "penjualan-menu/list-filter",
+);
 
 const menuSlice = createSlice({
   name: "menu",
@@ -145,6 +156,47 @@ const menuSlice = createSlice({
     builder.addCase(getMenu.rejected, (state, action) => {
       state.loadingCommon = false;
       state.errorCreate = action.payload.message;
+    });
+    builder.addCase(addMenuSales.pending, (state) => {
+      state.loadingMenu = true;
+      state.errorMenu = null;
+    });
+    builder.addCase(addMenuSales.fulfilled, (state, action) => {
+      state.loadingMenu = false;
+      const res = action.payload;
+      if (res.status) {
+        state.menuSales = res.data;
+        state.messageMenu = res.message;
+        state.errorMenu = null;
+      } else {
+        state.errorMenu = res.message;
+      }
+    });
+    builder.addCase(addMenuSales.rejected, (state, action) => {
+      state.loadingMenu = false;
+      state.errorMenu = action.payload.message;
+    });
+
+    //list menu sales
+    builder.addCase(getListMenuSales.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(getListMenuSales.fulfilled, (state, action) => {
+      state.loading = false;
+      const res = action.payload;
+      if (res.status) {
+        state.listMenuSales = res.data.list;
+        state.totalHargaMenu = res.data.total_keseluruhan;
+        state.message = res.message;
+        state.error = null;
+      } else {
+        state.error = res.message;
+      }
+    });
+    builder.addCase(getListMenuSales.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload.message;
     });
   },
 });

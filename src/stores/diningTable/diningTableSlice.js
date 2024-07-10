@@ -25,6 +25,7 @@ const initialState = {
   message: null,
   diningTable: null,
   resourceTable: [],
+  loadingDiningTable: false,
 };
 
 export const getDiningTable = get("GET_DINING_TABLE", "meja/meja-by-id");
@@ -80,7 +81,6 @@ const diningTableSlice = createSlice({
       } else {
         state.error = res.message;
       }
-      console.log("list => ", state.listDiningTable);
     });
     builder.addCase(getListDiningTable.rejected, (state, action) => {
       state.loadingTable = false;
@@ -166,6 +166,26 @@ const diningTableSlice = createSlice({
       state.loading = false;
       state.error = action.payload.message;
     });
+
+    //resource menu
+    // builder.addCase(removeDiningTable.pending, (state) => {
+    //   state.loadingDiningTable = true;
+    //   state.error = null;
+    // });
+    // builder.addCase(removeDiningTable.fulfilled, (state, action) => {
+    //   state.loadingDiningTable = false;
+    //   const res = action.payload;
+    //   if (res.status) {
+    //     state.message = res.message;
+    //     state.error = null;
+    //   } else {
+    //     state.error = res.message;
+    //   }
+    // });
+    // builder.addCase(removeDiningTable.rejected, (state, action) => {
+    //   state.loading = false;
+    //   state.error = action.payload.message;
+    // });
   },
 });
 

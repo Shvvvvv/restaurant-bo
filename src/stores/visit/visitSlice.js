@@ -24,6 +24,7 @@ const initialState = {
   message: null,
   visit: null,
   visitCreated: null,
+  listMenuSales: null,
 };
 
 export const getVisit = get("GET_VISIT", "kunjungan/kunjungan-by-id");
@@ -31,6 +32,7 @@ export const getListVisit = get("GET_LIST_VISIT", "kunjungan/list-filter");
 export const addVisit = post("CREATE_VISIT", "kunjungan/registrasi");
 export const updateVisit = put("EDIT_VISIT", "kunjungan/update");
 export const removeVisit = doDelete("DELETE_VISIT", "kunjungan/delete");
+export const sales = post("SALES", "penjualan/create");
 
 const visitSlice = createSlice({
   name: "visit",
@@ -157,6 +159,26 @@ const visitSlice = createSlice({
       }
     });
     builder.addCase(removeVisit.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload.message;
+    });
+
+    //sales
+    builder.addCase(sales.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(sales.fulfilled, (state, action) => {
+      state.loading = false;
+      const res = action.payload;
+      if (res.status) {
+        state.message = res.message;
+        state.error = null;
+      } else {
+        state.error = res.message;
+      }
+    });
+    builder.addCase(sales.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload.message;
     });

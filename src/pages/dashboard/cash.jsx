@@ -215,7 +215,6 @@ export function Cash() {
   };
 
   const getListHistoryCash = (id) => {
-    console.log();
     dispatch(
       getHistoryCash({
         query: {
@@ -274,7 +273,6 @@ export function Cash() {
   };
 
   const createAdjustment = () => {
-    console.log(payloadFormAdjustment);
     let err = null;
     Object.keys(payloadFormAdjustment).map((key) => {
       if (!payloadFormAdjustment[key] && key !== "keterangan") err = key;
@@ -320,7 +318,6 @@ export function Cash() {
       if (!payloadCashMutation[key] && key !== "keterangan") err = key;
     });
     if (err) {
-      console.log("klik kesini");
       swall(
         "error",
         "Error",

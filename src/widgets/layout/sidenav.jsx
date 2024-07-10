@@ -28,7 +28,6 @@ export function Sidenav({ brandImg, brandName, routes }) {
     } else {
       setActiveCollapse((prev) => [...prev, name]);
     }
-    console.log(activeCollapse);
   };
 
   return (

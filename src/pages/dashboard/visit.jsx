@@ -1,7 +1,12 @@
 import { currencyFormat } from "@/configs/currency";
 import swall from "@/configs/sweetalert";
+import { getResourceCash } from "@/stores/cash/cashSlice";
 import { getResourceTable } from "@/stores/diningTable/diningTableSlice";
-import { getResourceMenu } from "@/stores/menu/menuSlice";
+import {
+  addMenuSales,
+  getListMenuSales,
+  getResourceMenu,
+} from "@/stores/menu/menuSlice";
 import { getResourcePayment } from "@/stores/paymentMethod/paymentMethodSlice";
 import { getResourceTax } from "@/stores/tax/taxSlice";
 import {
@@ -11,11 +16,14 @@ import {
   setPage,
 } from "@/stores/visit/visitSlice";
 import { ContainerPage } from "@/widgets/container";
-import DatePicker from "@/widgets/inputs/datePicker";
 import { Tables } from "@/widgets/tables";
 import { ArrowUturnLeftIcon, PlusIcon } from "@heroicons/react/24/solid";
 import {
   Button,
+  Card,
+  CardBody,
+  CardHeader,
+  Checkbox,
   Dialog,
   DialogBody,
   DialogFooter,
@@ -25,6 +33,11 @@ import {
   Option,
   Select,
   Spinner,
+  Tab,
+  TabPanel,
+  Tabs,
+  TabsBody,
+  TabsHeader,
   Typography,
 } from "@material-tailwind/react";
 import dayjs from "dayjs";
@@ -37,12 +50,21 @@ export function Visit() {
     listVisit,
     visitCreated,
     paging,
-    loading,
     loadingTable,
     loadingSingle,
     error,
     message,
   } = useSelector((state) => state.visit);
+  const {
+    menuSales,
+    listMenuSales,
+    totalHargaMenu,
+    loadingMenu,
+    errorMenu,
+    messageMenu,
+    resourceTable,
+    loading,
+  } = useSelector((state) => state.menu);
   const dispatch = useDispatch();
   const [activaPage, setActivePage] = useState(1);
   const [activeTab, setActiveTab] = useState("home");
@@ -50,6 +72,7 @@ export function Visit() {
   const [defaultOptionsMenu, setDefaultOptionsMenu] = useState([]);
   const [defaultOptionsPayment, setDefaultOptionsPayment] = useState([]);
   const [defaultOptionsTax, setDefaultOptionsTax] = useState([]);
+  const [defaultOptionsCash, setDefaultOptionsCash] = useState([]);
 
   const columns = [
     {
@@ -218,7 +241,29 @@ export function Visit() {
       );
       if (getResourceTable.fulfilled.match(resultAction)) {
         callback(
-          resultAction.payload.data.list.map((v) => ({
+          resultAction.payload.data?.list.map((v) => ({
+            label: v.label,
+            value: v.id?.toString(),
+          })),
+        );
+      }
+    } catch (err) {
+      swall("error", "Gagal", err.message, false);
+    }
+  };
+
+  const loadOptionsCash = async (inputValue, callback) => {
+    try {
+      const resultAction = await dispatch(
+        getResourceCash({
+          query: {
+            search_key: inputValue,
+          },
+        }),
+      );
+      if (getResourceCash.fulfilled.match(resultAction)) {
+        callback(
+          resultAction.payload.data?.list.map((v) => ({
             label: v.label,
             value: v.id?.toString(),
           })),
@@ -240,7 +285,7 @@ export function Visit() {
       );
       if (getResourceMenu.fulfilled.match(resultAction)) {
         callback(
-          resultAction.payload.data.list.map((v) => ({
+          resultAction.payload.data?.list.map((v) => ({
             label: v.label,
             value: v.id?.toString(),
           })),
@@ -262,7 +307,7 @@ export function Visit() {
       );
       if (getResourcePayment.fulfilled.match(resultAction)) {
         callback(
-          resultAction.payload.data.list.map((v) => ({
+          resultAction.payload.data?.list.map((v) => ({
             label: v.label,
             value: v.id?.toString(),
           })),
@@ -284,7 +329,7 @@ export function Visit() {
       );
       if (getResourceTax.fulfilled.match(resultAction)) {
         callback(
-          resultAction.payload.data.list.map((v) => ({
+          resultAction.payload.data?.list.map((v) => ({
             label: v.label,
             value: v.id?.toString(),
           })),
@@ -312,6 +357,16 @@ export function Visit() {
         tgl_kunjungan: dayjs(payloadCreateVisiting.tgl_kunjungan).format(
           "YYYY-MM-DD HH:mm",
         ),
+        id_meja: payloadCreateVisiting.id_meja[0],
+      }),
+    );
+  };
+
+  const handleCreateMenuSales = () => {
+    dispatch(
+      addMenuSales({
+        menu: payloadAddMenu,
+        id_penjualan: visitCreated?.id_penjualan || "",
       }),
     );
   };
@@ -354,7 +409,29 @@ export function Visit() {
         );
         if (getResourceMenu.fulfilled.match(resultAction)) {
           setDefaultOptionsMenu(
-            resultAction.payload.data.list.map((v) => ({
+            resultAction.payload.data?.list.map((v) => ({
+              label: v.label,
+              value: v.id?.toString(),
+            })),
+          );
+        }
+      } catch (err) {
+        swall("error", "Gagal", err.message, false);
+      }
+    };
+
+    const loadDefaultOptionsCash = async () => {
+      try {
+        const resultAction = await dispatch(
+          getResourceCash({
+            query: {
+              search_key: "",
+            },
+          }),
+        );
+        if (getResourceCash.fulfilled.match(resultAction)) {
+          setDefaultOptionsCash(
+            resultAction.payload.data?.list.map((v) => ({
               label: v.label,
               value: v.id?.toString(),
             })),
@@ -376,7 +453,7 @@ export function Visit() {
         );
         if (getResourceTax.fulfilled.match(resultAction)) {
           setDefaultOptionsTax(
-            resultAction.payload.data.list.map((v) => ({
+            resultAction.payload.data?.list.map((v) => ({
               label: v.label,
               value: v.id?.toString(),
             })),
@@ -398,7 +475,7 @@ export function Visit() {
         );
         if (getResourcePayment.fulfilled.match(resultAction)) {
           setDefaultOptionsPayment(
-            resultAction.payload.data.list.map((v) => ({
+            resultAction.payload.data?.list.map((v) => ({
               label: v.label,
               value: v.id?.toString(),
             })),
@@ -420,7 +497,7 @@ export function Visit() {
         );
         if (getResourceTable.fulfilled.match(resultAction)) {
           setDefaultOptionsMeja(
-            resultAction.payload.data.list.map((v) => ({
+            resultAction.payload.data?.list.map((v) => ({
               label: v.label,
               value: v.id?.toString(),
             })),
@@ -431,6 +508,7 @@ export function Visit() {
       }
     };
 
+    loadDefaultOptionsCash();
     loadDefaultOptionsMeja();
     loadDefaultOptionsMenu();
     loadDefaultOptionsPayment();
@@ -438,36 +516,50 @@ export function Visit() {
   }, [dispatch]);
 
   useEffect(() => {
+    if (menuSales) {
+      dispatch(
+        getListMenuSales({
+          param: "",
+          query: {
+            limit: 99,
+            sort_key: "id_penjualan",
+            sort_by: "asc",
+            pages: 1,
+            id_penjualan: visitCreated?.id_penjualan,
+          },
+        }),
+      );
+    }
     if (error) {
       swall("error", "Gagal", error.message, false);
     }
-  }, [error]);
+  }, [error, menuSales]);
 
   return (
     <ContainerPage>
-      <Dialog open={false}>
+      <Dialog open={menuSales}>
         <DialogHeader className="border-b">Rincian Kunjungan</DialogHeader>
         <DialogBody>
           <Typography className="font-semibold">Informasi Pelanggan</Typography>
-          <div className="grid grid-cols-4 grid-flow-col mt-2">
-            <div className="cols-span-1">Nama Pelanggan</div>
-            <div className="cols-span-3">: Sandi Maldini</div>
+          <div className="grid grid-cols-3 grid-flow-col mt-2">
+            <div className="cols-span-2">Nama Pelanggan</div>
+            <div className="cols-span-2">: {visitCreated?.nama}</div>
           </div>
-          <div className="grid grid-cols-4 grid-flow-col mt-2">
-            <div className="cols-span-1">Nomor Hp</div>
-            <div className="cols-span-3">: 95483959385</div>
+          <div className="grid grid-cols-3 grid-flow-col mt-2">
+            <div className="cols-span-2">Nomor Hp</div>
+            <div className="cols-span-2">: {visitCreated?.nomor_hp}</div>
           </div>
-          <div className="grid grid-cols-4 grid-flow-col mt-2">
-            <div className="cols-span-1">Meja</div>
-            <div className="cols-span-3">: Meja Pinggir (A1)</div>
+          <div className="grid grid-cols-3 grid-flow-col mt-2">
+            <div className="cols-span-2">Meja</div>
+            <div className="cols-span-2">: </div>
           </div>
-          <div className="grid grid-cols-4 grid-flow-col mt-2">
-            <div className="cols-span-1">Jumlah Orang</div>
-            <div className="cols-span-3">: Sandi Maldini</div>
+          <div className="grid grid-cols-3 grid-flow-col mt-2">
+            <div className="cols-span-2">Jumlah Orang</div>
+            <div className="cols-span-2">: {visitCreated?.jumlah_orang}</div>
           </div>
-          <div className="grid grid-cols-4 grid-flow-col mt-2">
-            <div className="cols-span-1">Metode Pembayaran</div>
-            <div className="cols-span-3">: BCA</div>
+          <div className="grid grid-cols-3 grid-flow-col mt-2">
+            <div className="cols-span-2">Metode Pembayaran</div>
+            <div className="cols-span-2">: BCA</div>
           </div>
           <Typography className="font-semibold mt-6">
             Informasi Pesanan
@@ -478,70 +570,90 @@ export function Visit() {
             <div className="col-span-2">Harga</div>
             <div className="col-span-2">Total Harga</div>
           </div>
-          <div className="grid grid-cols-10 grid-flow-col mt-2 w-full">
-            <div className="col-span-5">Buaya Bakar</div>
-            <div className="col-span-1">x2</div>
-            <div className="col-span-2">{currencyFormat(120000)}</div>
-            <div className="col-span-2">{currencyFormat(45000)}</div>
-          </div>
-          <div className="grid grid-cols-10 grid-flow-col mt-2 w-full">
-            <div className="col-span-5">Bakar Abis</div>
-            <div className="col-span-1">1</div>
-            <div className="col-span-2">{currencyFormat(5000)}</div>
-            <div className="col-span-2">{currencyFormat(45000)}</div>
-          </div>
-          <div className="grid grid-cols-10 grid-flow-col mt-2 mb-6 w-full border-t">
-            <div className="col-span-5">Total</div>
-            <div className="col-span-1"></div>
-            <div className="col-span-2"></div>
-            <div className="col-span-2">{currencyFormat(45000)}</div>
-          </div>
-          <div className="grid grid-cols-10 grid-flow-col mt-2 w-full">
+          {loading ? (
+            <div className="flex w-full justify-center py-2">
+              <Spinner />
+            </div>
+          ) : (
+            listMenuSales?.map((menu) => {
+              return (
+                <div
+                  className="grid grid-cols-10 grid-flow-col mt-2 w-full"
+                  key={menu.id_penjualan_menu}
+                >
+                  <div className="col-span-5">{menu.nama_menu}</div>
+                  <div className="col-span-1">x{menu.qty}</div>
+                  <div className="col-span-2">{currencyFormat(menu.harga)}</div>
+                  <div className="col-span-2">
+                    {currencyFormat(menu.total_harga)}
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          <div className="grid grid-cols-12 grid-flow-col mt-2 w-full">
             <div className="col-span-5"></div>
             <div className="col-span-1"></div>
             <div className="col-span-2">
               <Typography className="float-right">Diskon :</Typography>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-4">
               <Typography className="float-right">0%</Typography>
             </div>
           </div>
-          <div className="grid grid-cols-10 grid-flow-col mt-2 w-full">
+          <div className="grid grid-cols-12 grid-flow-col mt-2 w-full">
             <div className="col-span-5"></div>
             <div className="col-span-1"></div>
             <div className="col-span-2">
               <Typography className="float-right">Pajak (12%) :</Typography>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-4">
               <Typography className="float-right">0%</Typography>
             </div>
           </div>
-          <div className="grid grid-cols-10 grid-flow-col mt-2 w-full border-b">
-            <div className="col-span-5"></div>
+          <div className="grid grid-cols-12 grid-flow-col mt-2 w-full border-b">
+            <div className="col-span-2"></div>
             <div className="col-span-1"></div>
-            <div className="col-span-2">
+            <div className="col-span-5">
               <Typography className="float-right">
                 Total Pembayaran :
               </Typography>
             </div>
-            <div className="col-span-2">
-              <Typography className="float-right">
-                {currencyFormat(1200000)}
+            <div className="col-span-4">
+              <Typography className="float-right" variant="lead">
+                {currencyFormat(totalHargaMenu)}
               </Typography>
             </div>
           </div>
         </DialogBody>
         <DialogFooter>
-          <div className="flex gap-2">
-            <Button variant="sm" className="bg-red-400">
-              Batal
-            </Button>
-            <Button variant="sm" className="bg-green-400">
-              Bayar
-            </Button>
+          <div className="flex gap-24 justify-between flex-grow">
+            <div className="flex-grow">
+              <AsyncSelect
+                placeholder="Pilih Kas"
+                loadOptions={loadOptionsCash}
+                cacheOptions
+                isMulti={false}
+                defaultOptions={defaultOptionsCash}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="sm" className="bg-red-400">
+                Batal
+              </Button>
+              <Button
+                variant="sm"
+                className="bg-green-400"
+                onClick={() => handleCreateMenuSales()}
+              >
+                Bayar
+              </Button>
+            </div>
           </div>
         </DialogFooter>
       </Dialog>
+
       <div className="relative overflow-hidden">
         <div
           style={activeTab === "home" ? styleShowTab : styleHideTab}
@@ -617,12 +729,6 @@ export function Visit() {
             children={children}
           />
         </div>
-        <div style={activeTab === "booking" ? styleShowTab : styleHideTab}>
-          <div>
-            <Button onClick={() => setActiveTab("home")}>Kembali</Button>
-          </div>
-          Booking
-        </div>
         <div style={activeTab === "kunjungan" ? styleShowTab : styleHideTab}>
           <div className="flex justify-between items-center">
             <Typography className="font-bold" variant="lead">
@@ -649,10 +755,437 @@ export function Visit() {
                         tgl_kunjungan: e.target.value,
                       })
                     }
-                    type="datetime-local"
+                    type="date"
+                    label="Tanggal Kunjungan"
+                    min={dayjs(new Date()).format("YYYY-MM-DD")}
+                    required
+                  />
+                </div>
+                <div className="col-span-2 relative">
+                  <Card className="absolute right-0 w-[45%]">
+                    <CardHeader className="bg-blue-gray-600">
+                      <div className="px-4 py-2">
+                        <Typography
+                          variant="lead"
+                          className="text-base text-white"
+                        >
+                          Meja Tersedia
+                        </Typography>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="max-h-80 overflow-auto">
+                      <Tabs value="2">
+                        <TabsHeader
+                          className="rounded-none border-b border-blue-gray-50 bg-transparent p-0 overflow-auto"
+                          indicatorProps={{
+                            className:
+                              "bg-transparent border-b-2 border-gray-900 shadow-none rounded-none",
+                          }}
+                        >
+                          <Tab value={"2"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 2
+                            </Typography>
+                          </Tab>
+                          <Tab value={"4"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 4
+                            </Typography>
+                          </Tab>
+                          <Tab value={"8"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 8
+                            </Typography>
+                          </Tab>
+                          <Tab value={"12"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 12
+                            </Typography>
+                          </Tab>
+                        </TabsHeader>
+                        <TabsBody>
+                          <TabPanel value={"2"}>
+                            <div className="flex flex-wrap gap-1">
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32%]">
+                                <Typography className="text-white text-center">
+                                  A1
+                                </Typography>
+                              </div>
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32%]">
+                                <Typography className="text-white text-center">
+                                  A2
+                                </Typography>
+                              </div>
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32%]">
+                                <Typography className="text-white text-center">
+                                  A3
+                                </Typography>
+                              </div>
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32%]">
+                                <Typography className="text-white text-center">
+                                  A4
+                                </Typography>
+                              </div>
+                            </div>
+                          </TabPanel>
+                          <TabPanel value={"4"}>Meja Penuh</TabPanel>
+                          <TabPanel value={"8"}>Meja Penuh</TabPanel>
+                          <TabPanel value={"12"}>Meja Penuh</TabPanel>
+                        </TabsBody>
+                      </Tabs>
+                    </CardBody>
+                  </Card>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6">
+              <Typography>Data Pelanggan</Typography>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <Input
+                    label="Nama Pelanggan"
+                    required
+                    value={payloadCreateVisiting.nama}
+                    onChange={(e) =>
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        nama: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="col-span-1">
+                  <Input
+                    label="Nomor Hp"
+                    required
+                    type="number"
+                    value={payloadCreateVisiting.nomor_hp}
+                    onChange={(e) =>
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        nomor_hp: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <Input
+                    label="Jumlah Orang"
+                    required
+                    type="number"
+                    value={payloadCreateVisiting.jumlah_orang}
+                    onChange={(e) =>
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        jumlah_orang: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-6">
+              <Typography>Informasi Pelanggan</Typography>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <AsyncSelect
+                    placeholder="Pilih Meja"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        backgroundColor: "transparent",
+                      }),
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
+                    }}
+                    cacheOptions
+                    isMulti={true}
+                    menuPortalTarget={document.getElementById("main-content")}
+                    loadOptions={loadOptionsMeja}
+                    defaultOptions={defaultOptionsMeja}
+                    value={payloadCreateVisiting.id_meja?.value}
+                    onChange={(e) => {
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        id_meja: e.map((item) => item.value),
+                      });
+                    }}
+                  />
+                </div>
+                <div className="col-span-1">
+                  <AsyncSelect
+                    placeholder="Pilih Metode Pembayaran"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        backgroundColor: "transparent",
+                      }),
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
+                    }}
+                    menuPortalTarget={document.getElementById("main-content")}
+                    cacheOptions
+                    isMulti={false}
+                    loadOptions={loadOptionsPayment}
+                    defaultOptions={defaultOptionsPayment}
+                    value={payloadCreateVisiting.id_metode_pembayaran?.value}
+                    onChange={(e) => {
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        id_metode_pembayaran: e.value,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <AsyncSelect
+                    placeholder="Pilih Pajak"
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        backgroundColor: "transparent",
+                      }),
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
+                    }}
+                    cacheOptions
+                    menuPortalTarget={document.getElementById("main-content")}
+                    isMulti={false}
+                    loadOptions={loadOptionsTax}
+                    defaultOptions={defaultOptionsTax}
+                    value={payloadCreateVisiting.id_pajak?.value}
+                    onChange={(e) => {
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        id_pajak: e.value,
+                      });
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 border-b border-blue-gray-400 pb-2 flex justify-end">
+              <Button
+                className=" bg-green-400 relative w-40  md:w-60 2xl:w-80"
+                variant="sm"
+                disabled={loadingSingle || visitCreated}
+                onClick={() => handleCreateVisiting()}
+              >
+                Lanjut
+              </Button>
+            </div>
+            {loadingSingle && (
+              <div className="p-10 flex justify-center">
+                <Spinner className="h-10 w-10" color="blue-gray" />
+              </div>
+            )}
+            {visitCreated && (
+              <div className="mt-6 pb-10">
+                <Typography>Pilihan Menu</Typography>
+                <div className="grid grid-cols-10 grid-flow-col gap-2 mt-4">
+                  <div className="col-span-2 flex gap-2">
+                    <Button
+                      variant="sm"
+                      className="py-1 flex justify-center items-center bg-blue-400 w-32"
+                      onClick={() => handleClickAddMenu()}
+                    >
+                      <PlusIcon className="h-6 w-6" />
+                    </Button>
+                    <Button
+                      variant="sm"
+                      className="py-1 flex justify-center items-center bg-green-400 w-32"
+                      onClick={() => handleCreateMenuSales()}
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </div>
+                {payloadAddMenu.map((menu, idx) => (
+                  <div className="grid grid-cols-10 grid-flow-col gap-4 mt-4">
+                    <div className="col-span-4">
+                      <AsyncSelect
+                        placeholder="Pilih Menu"
+                        styles={{
+                          control: (base) => ({
+                            ...base,
+                            backgroundColor: "transparent",
+                          }),
+                          option: (base) => ({
+                            ...base,
+                          }),
+                        }}
+                        cacheOptions
+                        isMulti={false}
+                        loadOptions={loadOptionsMenu}
+                        defaultOptions={defaultOptionsMenu}
+                        value={payloadAddMenu[idx].id_menu?.value}
+                        onChange={(e) => {
+                          setPayloadAddMenu((prevData) => {
+                            const data = [...prevData];
+                            data[idx] = {
+                              ...data[idx],
+                              id_menu: e.value,
+                            };
+                            return data;
+                          });
+                        }}
+                        menuPosition="fixed"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <Input
+                        label="Qty"
+                        type="number"
+                        value={payloadAddMenu[idx].qty}
+                        onChange={(e) =>
+                          setPayloadAddMenu((prevData) => {
+                            const data = [...prevData];
+                            data[idx] = {
+                              ...data[idx],
+                              qty: e.target.value,
+                            };
+                            return data;
+                          })
+                        }
+                        required
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={activeTab === "booking" ? styleShowTab : styleHideTab}>
+          <div className="flex justify-between items-center">
+            <Typography className="font-bold" variant="lead">
+              Tambah Booking
+            </Typography>
+            <Button
+              variant="text"
+              onClick={() => setActiveTab("home")}
+              className="flex items-center gap-2"
+            >
+              <ArrowUturnLeftIcon className="h-6 w-6" /> Kembali
+            </Button>
+          </div>
+          <div className="mt-8">
+            <div>
+              <Typography>Kunjungan Pelanggan</Typography>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <Input
+                    value={payloadCreateVisiting.tgl_kunjungan}
+                    onChange={(e) =>
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        tgl_kunjungan: e.target.value,
+                      })
+                    }
+                    type="date"
+                    min={dayjs(new Date()).format("YYYY-MM-DD")}
                     label="Tanggal Kunjungan"
                     required
                   />
+                </div>
+                <div className="col-span-1">
+                  <Input
+                    value={payloadCreateVisiting.tgl_kunjungan}
+                    onChange={(e) =>
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        tgl_kunjungan: e.target.value,
+                      })
+                    }
+                    type="time"
+                    label="Jam Kunjungan"
+                    required
+                  />
+                </div>
+                <div className="col-span-1 relative">
+                  <Card className="absolute right-0 w-full">
+                    <CardHeader className="bg-blue-gray-600">
+                      <div className="px-4 py-2">
+                        <Typography
+                          variant="lead"
+                          className="text-base text-white"
+                        >
+                          Meja Tersedia
+                        </Typography>
+                      </div>
+                    </CardHeader>
+                    <CardBody className="max-h-80 overflow-auto">
+                      <Tabs value="2">
+                        <TabsHeader
+                          className="rounded-none border-b border-blue-gray-50 bg-transparent p-0"
+                          indicatorProps={{
+                            className:
+                              "bg-transparent border-b-2 border-gray-900 shadow-none rounded-none",
+                          }}
+                        >
+                          <Tab value={"2"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 2
+                            </Typography>
+                          </Tab>
+                          <Tab value={"4"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 4
+                            </Typography>
+                          </Tab>
+                          <Tab value={"8"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 8
+                            </Typography>
+                          </Tab>
+                          <Tab value={"12"}>
+                            <Typography className="text-xs font-bold">
+                              Kapasitas 12
+                            </Typography>
+                          </Tab>
+                        </TabsHeader>
+                        <TabsBody>
+                          <TabPanel value={"2"}>
+                            <div className="flex flex-wrap gap-1">
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
+                                <Typography className="text-white text-center">
+                                  A1
+                                </Typography>
+                              </div>
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
+                                <Typography className="text-white text-center">
+                                  A2
+                                </Typography>
+                              </div>
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
+                                <Typography className="text-white text-center">
+                                  A3
+                                </Typography>
+                              </div>
+                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
+                                <Typography className="text-white text-center">
+                                  A4
+                                </Typography>
+                              </div>
+                            </div>
+                          </TabPanel>
+                          <TabPanel value={"4"}>Kapasitas 4</TabPanel>
+                          <TabPanel value={"8"}>Kapasitas 8</TabPanel>
+                          <TabPanel value={"12"}>Kapasitas 12</TabPanel>
+                        </TabsBody>
+                      </Tabs>
+                    </CardBody>
+                  </Card>
                 </div>
               </div>
             </div>
@@ -777,9 +1310,15 @@ export function Visit() {
                 </div>
               </div>
             </div>
+            <div className="grid grid-cols-3 grid-flow-col gap-4 mt-2">
+              <div className="col-span-1 flex items-center">
+                <Checkbox />
+                Pesan Menu
+              </div>
+            </div>
             <div className="mt-6 border-b border-blue-gray-400 pb-2 flex justify-end">
               <Button
-                className=" bg-green-400 relative"
+                className=" bg-green-400 relative w-72"
                 variant="sm"
                 disabled={loadingSingle || visitCreated}
                 onClick={() => handleCreateVisiting()}
@@ -792,7 +1331,7 @@ export function Visit() {
                 <Spinner className="h-10 w-10" color="blue-gray" />
               </div>
             )}
-            {visitCreated && (
+            {true && (
               <div className="mt-6 pb-10">
                 <Typography>Pilihan Menu</Typography>
                 <div className="grid grid-cols-10 grid-flow-col gap-2 mt-4">
@@ -807,7 +1346,7 @@ export function Visit() {
                     <Button
                       variant="sm"
                       className="flex-grow py-1 flex justify-center items-center bg-green-400"
-                      onClick={() => handleClickAddMenu()}
+                      onClick={() => handleCreateMenuSales()}
                     >
                       Submit
                     </Button>
@@ -828,11 +1367,15 @@ export function Visit() {
                         isMulti={false}
                         loadOptions={loadOptionsMenu}
                         defaultOptions={defaultOptionsMenu}
-                        value={payloadAddMenu.id_menu?.value}
+                        value={payloadAddMenu[idx].id_menu?.value}
                         onChange={(e) => {
-                          setPayloadCreateVisiting({
-                            ...payloadAddMenu,
-                            id_menu: e.value,
+                          setPayloadAddMenu((prevData) => {
+                            const data = [...prevData];
+                            data[idx] = {
+                              ...data,
+                              id_menu: e.value,
+                            };
+                            return data;
                           });
                         }}
                       />
@@ -841,11 +1384,15 @@ export function Visit() {
                       <Input
                         label="Qty"
                         type="number"
-                        value={payloadAddMenu.qty}
+                        value={payloadAddMenu[idx].qty}
                         onChange={(e) =>
-                          setPayloadAddMenu({
-                            ...payloadAddMenu,
-                            qty: e.target.value,
+                          setPayloadAddMenu((prevData) => {
+                            const data = [...prevData];
+                            data[idx] = {
+                              ...data,
+                              qty: e.target.value,
+                            };
+                            return data;
                           })
                         }
                         required

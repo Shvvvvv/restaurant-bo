@@ -53,6 +53,7 @@ export const addMutationCash = post(
   "CREATE_MUTATION_CASH",
   "mutasi-kas/create",
 );
+export const getResourceCash = get("GET_RESOURCE_CASH", "kas/resource");
 
 const cashSlice = createSlice({
   name: "cash",
