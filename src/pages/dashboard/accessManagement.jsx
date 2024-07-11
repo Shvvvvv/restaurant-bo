@@ -2,10 +2,14 @@ import swall from "@/configs/sweetalert";
 import { pagingDummy, userData } from "@/data/dummy";
 import {
   addUser,
+  changePassword,
+  clearMessageUser,
+  clearSuccessChangePassword,
   clearUser,
   getListUser,
   getUser,
   removeUser,
+  updateUser,
 } from "@/stores/accessManagement/accessManagementSlice";
 import { ContainerPage } from "@/widgets/container";
 import { Loading } from "@/widgets/loading";
@@ -42,6 +46,7 @@ export function AccessManagement() {
     messageUser,
     listUser,
     user,
+    successChangePassword,
   } = useSelector((state) => state.accessManagement);
   const column = [
     { key: "no", label: "No." },
@@ -63,7 +68,30 @@ export function AccessManagement() {
     email: "",
     status: false,
   });
+  const [payloadChangePassword, setPayloadChangePassword] = useState({
+    passwordLama: "",
+    passwordBaru: "",
+    passwordKonfirmasi: "",
+  });
   const [searchKey, setSearchKey] = useState("");
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
+  const styleShowTab = {
+    opacity: 1,
+    zIndex: 2,
+    position: "relative",
+    transform: "translateX(0)",
+    transition: "opacity 0.5s, transform 0.5s",
+  };
+  const styleHideTab = {
+    position: "absolute",
+    zIndex: 1,
+    top: 0,
+    left: 0,
+    transform: "translateX(-100%)",
+    opacity: 0,
+    transition: "opacity 0.5s, transform 0.5s",
+  };
   const children = {
     action: (data) => {
       return (
@@ -133,6 +161,14 @@ export function AccessManagement() {
       status: false,
     });
     dispatch(clearUser());
+    dispatch(clearSuccessChangePassword());
+  };
+  const clearPayloadChangePassword = () => {
+    setPayloadChangePassword({
+      passwordBaru: "",
+      passwordKonfirmasi: "",
+      passwordLama: "",
+    });
   };
 
   const handleEditUser = (id) => {
@@ -152,7 +188,21 @@ export function AccessManagement() {
   };
 
   const handleTambahFormUser = () => {
-    dispatch(addUser(payloadUser));
+    if (payloadUser.id_user) {
+      dispatch(clearUser());
+      dispatch(updateUser(payloadUser));
+    } else {
+      dispatch(addUser(payloadUser));
+    }
+  };
+
+  const handleChangePassword = () => {
+    dispatch(
+      changePassword({
+        ...payloadChangePassword,
+        id_user: user?.id_user,
+      }),
+    );
   };
 
   const getDataUser = () => {
@@ -173,6 +223,7 @@ export function AccessManagement() {
       setShowFormUser(false);
       clearPayloadUser();
       getDataUser();
+      dispatch(clearMessageUser());
     }
     if (errorUser) {
       swall("error", "Error", errorUser, false);
@@ -184,10 +235,16 @@ export function AccessManagement() {
         nomor_hp: user.nomor_hp,
         username: user.username,
         status: user.status || false,
+        id_user: user.id_user,
       });
       setShowFormUser(true);
     }
-  }, [messageUser, errorUser, user]);
+    if (successChangePassword) {
+      swall("success", "Berhasil", successChangePassword, false);
+      clearPayloadChangePassword();
+      setShowChangePassword(false);
+    }
+  }, [messageUser, errorUser, user, successChangePassword]);
 
   useEffect(() => {
     getDataUser();
@@ -195,10 +252,13 @@ export function AccessManagement() {
   return (
     <ContainerPage>
       <Loading isShow={loadingUser2} />
-      <Dialog open={showFormUser}>
+      <Dialog open={showFormUser} size="sm">
         <DialogHeader>Form User</DialogHeader>
-        <DialogBody>
-          <div className="flex flex-col gap-4">
+        <DialogBody className="relative overflow-auto">
+          <div
+            className={`flex flex-col gap-4`}
+            style={!showChangePassword ? styleShowTab : styleHideTab}
+          >
             <Input
               label="Nama"
               placeholder="Nama"
@@ -223,25 +283,27 @@ export function AccessManagement() {
                 })
               }
             />
-            <Input
-              label="Password"
-              value={payloadUser.password}
-              onChange={(e) =>
-                setPayloadUser({
-                  ...payloadUser,
-                  password: e.target.value,
-                })
-              }
-              type={showPassword ? "text" : "password"}
-              placeholder="Password"
-              required
-              icon={
-                <EyeIcon
-                  role="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                />
-              }
-            />
+            {!user && (
+              <Input
+                label="Password"
+                value={payloadUser.password}
+                onChange={(e) =>
+                  setPayloadUser({
+                    ...payloadUser,
+                    password: e.target.value,
+                  })
+                }
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                required
+                icon={
+                  <EyeIcon
+                    role="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                  />
+                }
+              />
+            )}
             <Input
               value={payloadUser.nomor_hp}
               onChange={(e) =>
@@ -279,26 +341,88 @@ export function AccessManagement() {
                 })
               }
             />
+            <div className="flex justify-between w-full mt-4">
+              <div>
+                {user && (
+                  <Button
+                    onClick={() => setShowChangePassword(!showChangePassword)}
+                    color="blue-gray"
+                  >
+                    Ganti Password
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  color="red"
+                  onClick={handleBatalFormUser}
+                  disabled={loadingUser}
+                >
+                  Batal
+                </Button>
+                <Button
+                  color="green"
+                  onClick={handleTambahFormUser}
+                  disabled={loadingUser}
+                >
+                  {loadingUser ? <Spinner /> : "Simpan"}
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div style={showChangePassword ? styleShowTab : styleHideTab}>
+            <div className="flex flex-col gap-4">
+              <Input
+                label="Password Lama"
+                required
+                value={payloadChangePassword.passwordLama}
+                onChange={(e) =>
+                  setPayloadChangePassword({
+                    ...payloadChangePassword,
+                    passwordLama: e.target.value,
+                  })
+                }
+              />
+              <Input
+                label="Password Baru"
+                required
+                value={payloadChangePassword.passwordBaru}
+                onChange={(e) =>
+                  setPayloadChangePassword({
+                    ...payloadChangePassword,
+                    passwordBaru: e.target.value,
+                  })
+                }
+              />
+              <Input
+                label="Ulangi Password"
+                required
+                value={payloadChangePassword.passwordKonfirmasi}
+                onChange={(e) =>
+                  setPayloadChangePassword({
+                    ...payloadChangePassword,
+                    passwordKonfirmasi: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="flex justify-between w-full mt-4">
+              <Button
+                onClick={() => setShowChangePassword(!showChangePassword)}
+                color="blue-gray"
+              >
+                Kembali
+              </Button>
+              <Button
+                color="green"
+                disabled={loadingUser}
+                onClick={handleChangePassword}
+              >
+                {loadingUser ? <Spinner /> : "Simpan"}
+              </Button>
+            </div>
           </div>
         </DialogBody>
-        <DialogFooter>
-          <div className="flex gap-2">
-            <Button
-              color="red"
-              onClick={handleBatalFormUser}
-              disabled={loadingUser}
-            >
-              Batal
-            </Button>
-            <Button
-              color="green"
-              onClick={handleTambahFormUser}
-              disabled={loadingUser}
-            >
-              {loadingUser ? <Spinner /> : "Simpan"}
-            </Button>
-          </div>
-        </DialogFooter>
       </Dialog>
       <div className="mb-10 flex justify-between md:flex-auto flex-wrap gap-2">
         <div className="min-w-[200px] md:w-72 w-full"></div>

@@ -21,13 +21,14 @@ const initialState = {
   loadingUser2: false,
   errorUser: null,
   messageUser: null,
+  successChangePassword: null,
   user: null,
 };
 
 export const getUser = get("GET_USER", "users/users-by-id");
 export const getListUser = get("GET_LIST_USER", "users/list-filter");
 export const addUser = post("CREATE_USER", "users/create");
-export const updateUser = putFormData("EDIT_USER", "users/update");
+export const updateUser = put("EDIT_USER", "users/update");
 export const removeUser = doDelete("DELETE_USER", "users/delete");
 export const changePassword = put(
   "CHANGE_PASSWORD_USER",
@@ -51,11 +52,14 @@ const accessManagementSlice = createSlice({
     clearError: (state) => {
       state.error = null;
     },
-    clearMessage: (state) => {
-      state.message = null;
+    clearMessageUser: (state) => {
+      state.messageUser = null;
     },
     clearUser: (state) => {
       state.user = null;
+    },
+    clearSuccessChangePassword: (state) => {
+      state.successChangePassword = null;
     },
   },
   extraReducers: (builder) => {
@@ -122,22 +126,22 @@ const accessManagementSlice = createSlice({
 
     //update User
     builder.addCase(updateUser.pending, (state) => {
-      state.loading = true;
-      state.error = null;
+      state.loadingUser = true;
+      state.errorUser = null;
     });
     builder.addCase(updateUser.fulfilled, (state, action) => {
-      state.loading = false;
+      state.loadingUser = false;
       const res = action.payload;
       if (res.status) {
-        state.message = res.message;
-        state.error = null;
+        state.messageUser = res.message;
+        state.errorUser = null;
       } else {
-        state.error = res.message;
+        state.errorUser = res.message;
       }
     });
     builder.addCase(updateUser.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload.message;
+      state.loadingUser = false;
+      state.errorUser = action.payload.message;
     });
 
     //remove User
@@ -162,26 +166,31 @@ const accessManagementSlice = createSlice({
 
     //change password user
     builder.addCase(changePassword.pending, (state) => {
-      state.loading = true;
-      state.error = null;
+      state.loadingUser = true;
+      state.errorUser = null;
     });
     builder.addCase(changePassword.fulfilled, (state, action) => {
-      state.loading = false;
+      state.loadingUser = false;
       const res = action.payload;
       if (res.status) {
-        state.message = res.message;
-        state.error = null;
+        state.successChangePassword = "Password anda berhasil diubah";
+        state.errorUser = null;
       } else {
-        state.error = res.message;
+        state.errorUser = res.message;
       }
     });
     builder.addCase(changePassword.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload.message;
+      state.loadingUser = false;
+      state.errorUser = action.payload.message;
     });
   },
 });
 
-export const { clearPaging, clearError, clearMessage, clearUser } =
-  accessManagementSlice.actions;
+export const {
+  clearPaging,
+  clearError,
+  clearMessageUser,
+  clearUser,
+  clearSuccessChangePassword,
+} = accessManagementSlice.actions;
 export default accessManagementSlice.reducer;

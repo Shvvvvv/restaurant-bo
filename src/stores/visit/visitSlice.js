@@ -17,7 +17,7 @@ const initialState = {
     sort_key: "id_kunjungan",
     sort_by: "desc",
   },
-  loading: false,
+  loadingVisit: false,
   loadingSingle: false,
   loadingTable: false,
   error: null,
@@ -84,21 +84,21 @@ const visitSlice = createSlice({
 
     //get visit
     builder.addCase(getVisit.pending, (state) => {
-      state.loading = true;
+      state.loadingVisit = true;
       state.error = null;
     });
     builder.addCase(getVisit.fulfilled, (state, action) => {
-      state.loading = false;
+      state.loadingVisit = false;
       const res = action.payload;
       if (res.status) {
-        state.visit = res.data.list;
+        state.visit = res.data;
         state.error = null;
       } else {
         state.error = res.message;
       }
     });
     builder.addCase(getVisit.rejected, (state, action) => {
-      state.loading = false;
+      state.loadingVisit = false;
       state.error = action.payload.message;
     });
 
