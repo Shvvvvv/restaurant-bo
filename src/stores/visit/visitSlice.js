@@ -1,6 +1,7 @@
 import {
   doDelete,
   get,
+  getBlob,
   post,
   postFormData,
   put,
@@ -22,6 +23,8 @@ const initialState = {
   loadingTable: false,
   error: null,
   message: null,
+  messageSuccess: null,
+  messageSuccessFinished: null,
   visit: null,
   visitCreated: null,
   listMenuSales: null,
@@ -33,6 +36,13 @@ export const addVisit = post("CREATE_VISIT", "kunjungan/registrasi");
 export const updateVisit = put("EDIT_VISIT", "kunjungan/update");
 export const removeVisit = doDelete("DELETE_VISIT", "kunjungan/delete");
 export const sales = post("SALES", "penjualan/create");
+export const visitPayment = put("VISIT_PAYMENT", "kunjungan/bayar-kunjungan");
+export const finishedVisit = put(
+  "FINISHED_VISIT",
+  "kunjungan/selesai-kunjungan",
+);
+export const cancelVisit = put("CANCEL_VISIT", "kunjungan/batal-kunjungan");
+export const printBill = getBlob("PRINT_BILL", "kunjungan/cetak-tagihan");
 
 const visitSlice = createSlice({
   name: "visit",
@@ -53,8 +63,17 @@ const visitSlice = createSlice({
     clearMessage: (state) => {
       state.message = null;
     },
+    clearMessageSuccess: (state) => {
+      state.messageSuccess = null;
+    },
+    clearMessageSuccessFinished: (state) => {
+      state.messageSuccessFinished = null;
+    },
     clearVisit: (state) => {
       state.visit = null;
+    },
+    clearVisitCreated: (state) => {
+      state.visitCreated = null;
     },
     setPage: (state, action) => {
       state.paging.pages = action.payload;
@@ -182,9 +201,59 @@ const visitSlice = createSlice({
       state.loading = false;
       state.error = action.payload.message;
     });
+
+    //visit payment
+    builder.addCase(visitPayment.pending, (state) => {
+      state.loadingSingle = true;
+      state.error = null;
+    });
+    builder.addCase(visitPayment.fulfilled, (state, action) => {
+      state.loadingSingle = false;
+      const res = action.payload;
+      if (res.status) {
+        state.messageSuccess = res.message;
+        state.error = null;
+      } else {
+        state.error = res.message;
+      }
+    });
+    builder.addCase(visitPayment.rejected, (state, action) => {
+      state.loadingSingle = false;
+      state.error = action.payload.message;
+    });
+
+    //finished visit
+    builder.addCase(finishedVisit.pending, (state) => {
+      state.loadingSingle = true;
+      state.error = null;
+    });
+    builder.addCase(finishedVisit.fulfilled, (state, action) => {
+      state.loadingSingle = false;
+      const res = action.payload;
+      if (res.status) {
+        console.log(res.message);
+        state.messageSuccessFinished = res.message;
+        console.log(state.messageSuccessFinished);
+        state.error = null;
+      } else {
+        state.error = res.message;
+      }
+    });
+    builder.addCase(finishedVisit.rejected, (state, action) => {
+      state.loadingSingle = false;
+      state.error = action.payload.message;
+    });
   },
 });
 
-export const { clearPaging, clearError, clearMessage, clearVisit, setPage } =
-  visitSlice.actions;
+export const {
+  clearPaging,
+  clearError,
+  clearMessage,
+  clearVisit,
+  setPage,
+  clearVisitCreated,
+  clearMessageSuccess,
+  clearMessageSuccessFinished,
+} = visitSlice.actions;
 export default visitSlice.reducer;

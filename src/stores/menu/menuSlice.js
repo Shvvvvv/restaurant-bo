@@ -64,6 +64,12 @@ const menuSlice = createSlice({
         sort_by: "desc",
       };
     },
+    clearMenuSales: (state) => {
+      state.menuSales = null;
+    },
+    clearMessageMenu: (state) => {
+      state.messageMenu = null;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(getListMenu.pending, (state) => {
@@ -166,7 +172,7 @@ const menuSlice = createSlice({
       const res = action.payload;
       if (res.status) {
         state.menuSales = res.data;
-        state.messageMenu = res.message;
+        state.messageMenu = "Menu berhasil ditambahkan";
         state.errorMenu = null;
       } else {
         state.errorMenu = res.message;
@@ -207,5 +213,7 @@ export const {
   resetPaging,
   clearMenu,
   clearErrorCreate,
+  clearMenuSales,
+  clearMessageMenu,
 } = menuSlice.actions;
 export default menuSlice.reducer;
