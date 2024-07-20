@@ -819,9 +819,24 @@ export function Visit() {
                   : {visit?.nama_metode_pembayaran}
                 </div>
               </div>
+              <div className="grid grid-cols-3 grid-flow-col mt-2">
+                <div className="cols-span-2">Keterangan</div>
+                <div className="cols-span-2">: {visit?.keterangan}</div>
+              </div>
+              <div className="grid grid-cols-3 grid-flow-col mt-2">
+                <div className="cols-span-2">Invoice</div>
+                <div className="cols-span-2">
+                  :{" "}
+                  {visit?.invoice == 1
+                    ? "Lunas"
+                    : visit?.invoice == 2
+                    ? "Expired"
+                    : "Draft"}
+                </div>
+              </div>
               <div className="flex justify-between items-baseline my-4">
                 <Typography className="font-semibold mt-6">
-                  Informasi Pesanan
+                  Informasi Pesanan 
                 </Typography>
                 {(visit?.status == 2 || visit?.status == 1) && (
                   <Button
