@@ -12,7 +12,10 @@ import {
 import { getResourcePayment } from "@/stores/paymentMethod/paymentMethodSlice";
 import { getResourceTax } from "@/stores/tax/taxSlice";
 import {
+  addBooking,
   addVisit,
+  bookingPayment,
+  bookingToRegistrasi,
   cancelVisit,
   clearError,
   clearMessageSuccess,
@@ -25,12 +28,14 @@ import {
   getVisit,
   printBill,
   setPage,
+  updateBooking,
   visitPayment,
 } from "@/stores/visit/visitSlice";
 import { ContainerPage } from "@/widgets/container";
 import { Tables } from "@/widgets/tables";
 import {
   ArrowUturnLeftIcon,
+  EyeIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon,
@@ -56,10 +61,12 @@ import {
   Tabs,
   TabsBody,
   TabsHeader,
+  Textarea,
   Typography,
 } from "@material-tailwind/react";
 import dayjs from "dayjs";
 import React, { useEffect, useRef, useState } from "react";
+import CurrencyInput from "react-currency-input-field";
 import { useDispatch, useSelector } from "react-redux";
 import AsyncSelect from "react-select/async";
 import Swal from "sweetalert2";
@@ -97,6 +104,7 @@ export function Visit() {
   const [defaultOptionsTax, setDefaultOptionsTax] = useState([]);
   const [defaultOptionsCash, setDefaultOptionsCash] = useState([]);
   const [selectedCash, setSelectedCash] = useState("");
+  const [totalCashPayment, setTotalCashPayment] = useState(null);
   const [showDetailVisit, setShowDetailVisit] = useState(false);
   const [showChangeMenu, setShowChangeMenu] = useState(false);
 
@@ -225,10 +233,9 @@ export function Visit() {
           <IconButton
             color="blue-gray"
             size="sm"
-            disabled={data.status === 3 || data.status === 99}
             onClick={() => handleClickDetailVisit(data.id_kunjungan)}
           >
-            <PencilIcon height={20} />
+            <EyeIcon height={20} />
           </IconButton>
         </div>
       );
@@ -265,6 +272,19 @@ export function Visit() {
     id_meja: null,
     id_metode_pembayaran: null,
     id_pajak: null,
+    email: "",
+  });
+  const [payloadCreateBooking, setPayloadCreateBooking] = useState({
+    tgl_kunjungan: "",
+    nama: "",
+    nomor_hp: "",
+    jumlah_orang: "",
+    id_meja: null,
+    id_metode_pembayaran: null,
+    id_pajak: null,
+    email: "",
+    jam: "",
+    keteraangan: "",
   });
   const [payloadAddMenu, setPayloadAddMenu] = useState([
     {
@@ -273,6 +293,56 @@ export function Visit() {
       id_penjualan_menu: null,
     },
   ]);
+
+  const clearPayloadVisiting = () => {
+    dispatch(clearVisit());
+    dispatch(clearVisitCreated());
+    dispatch(clearMenuSales());
+    setPayloadAddMenu([
+      {
+        id_menu: null,
+        qty: 0,
+        id_penjualan_menu: null,
+      },
+    ]);
+    setPayloadCreateVisiting({
+      tgl_kunjungan: "",
+      nama: "",
+      nomor_hp: "",
+      email: "",
+      jumlah_orang: "",
+      id_meja: null,
+      id_metode_pembayaran: null,
+      id_pajak: null,
+      email: "",
+    });
+    setDiningIn(false);
+    setSelectedCash(null);
+  };
+  const clearPayloadBooking = () => {
+    dispatch(clearVisit());
+    dispatch(clearVisitCreated());
+    dispatch(clearMenuSales());
+    setPayloadAddMenu([
+      {
+        id_menu: null,
+        qty: 0,
+        id_penjualan_menu: null,
+      },
+    ]);
+    setPayloadCreateBooking({
+      tgl_kunjungan: "",
+      nama: "",
+      nomor_hp: "",
+      jumlah_orang: "",
+      id_meja: null,
+      id_metode_pembayaran: null,
+      id_pajak: null,
+      email: "",
+      jam: "",
+      keteraangan: "",
+    });
+  };
   const loadOptionsDiningTable = async (inputValue, callback) => {
     try {
       const resultAction = await dispatch(
@@ -285,6 +355,7 @@ export function Visit() {
                 : new Date(),
             ).format("YYYY-MM-DD"),
             kapasitas: payloadCreateVisiting.jumlah_orang,
+            jam: String(payloadCreateVisiting.jam),
           },
         }),
       );
@@ -421,11 +492,25 @@ export function Visit() {
       }),
     );
   };
+  const handleCreateBooking = () => {
+    dispatch(
+      addBooking({
+        ...payloadCreateBooking,
+        tgl_kunjungan: dayjs(payloadCreateBooking.tgl_kunjungan).format(
+          "YYYY-MM-DD",
+        ),
+        id_meja: payloadCreateBooking.id_meja?.value || null,
+        id_metode_pembayaran:
+          payloadCreateBooking.id_metode_pembayaran?.value || null,
+        id_pajak: payloadCreateBooking.id_pajak?.value || null,
+      }),
+    );
+  };
   const handleCreateMenuSales = () => {
     dispatch(
       addMenuSales({
         menu: payloadAddMenu.map((item) => ({
-          id_menu: item.id_menu.value,
+          id_menu: item.id_menu?.value,
           qty: item.qty,
           id_penjualan_menu: item.id_penjualan_menu,
         })),
@@ -437,9 +522,25 @@ export function Visit() {
     dispatch(
       visitPayment({
         id_kunjungan: visit?.id_kunjungan,
-        bayar_nominal: visit?.total_tagihan,
+        bayar_nominal:
+          visit?.id_metode_pembayaran != 6
+            ? visit?.total_tagihan
+            : parseInt(totalCashPayment),
         id_metode_pembayaran: visit?.id_metode_pembayaran,
         id_kas: selectedCash?.value,
+      }),
+    );
+  };
+  const handleBookingPayment = () => {
+    dispatch(
+      bookingPayment({
+        id_kunjungan: visit?.id_kunjungan,
+        id_metode_pembayaran: visit?.id_metode_pembayaran,
+        id_kas: selectedCash?.value,
+        bayar_nominal:
+          visit?.id_metode_pembayaran != 6
+            ? visit?.total_tagihan
+            : parseInt(totalCashPayment),
       }),
     );
   };
@@ -496,6 +597,106 @@ export function Visit() {
                   id_pajak: null,
                 });
                 setActiveTab("home");
+                setShowDetailVisit(false);
+                getData();
+              },
+            );
+          }
+        } catch (err) {
+          swall("error", "Gagal", "Kunjungan gagal dibatalkan", false);
+        }
+      },
+    });
+  };
+  const handleConfirmBooking = async () => {
+    try {
+      const confirm = await dispatch(
+        updateBooking({
+          id_kunjungan: visit?.id_kunjungan || "",
+          status_booking: 2,
+        }),
+      );
+      if (updateBooking.fulfilled.match(confirm)) {
+        if (confirm.payload.status) {
+          swall(
+            "success",
+            "Berhasil",
+            "Booking berhasil disetujui",
+            false,
+            () => {
+              setShowDetailVisit(false);
+              getData();
+            },
+          );
+        } else {
+          swall("error", "Gagal", confirm.payload.message, false);
+        }
+      }
+    } catch (err) {
+      swall("error", "Error", err.message, false);
+    }
+  };
+  const handleBookingToRegistrasi = async () => {
+    try {
+      const confirm = await dispatch(
+        bookingToRegistrasi({
+          id_kunjungan: visit?.id_kunjungan,
+        }),
+      );
+      if (bookingToRegistrasi.fulfilled.match(confirm)) {
+        if (confirm.payload.status) {
+          swall("success", "Berhasil", confirm.payload.message, false, () => {
+            setShowDetailVisit(false);
+            getData();
+          });
+        } else {
+          swall("error", "Gagal", confirm.payload.message, false);
+        }
+      }
+    } catch (err) {
+      swall("error", "Error", err.message, false);
+    }
+  };
+  const handleCancelBooking = () => {
+    Swal.fire({
+      title: "Alasan booking dibatalkan?",
+      input: "textarea",
+      inputAttributes: {
+        autocapitalize: "off",
+      },
+      showCancelButton: true,
+      customClass: {
+        container: "z-[9999]",
+      },
+      showLoaderOnConfirm: true,
+      preConfirm: async (alasan) => {
+        try {
+          const cancel = await dispatch(
+            updateBooking({
+              id_kunjungan: visit?.id_kunjungan,
+              status_booking: 3,
+              alasan_batal: alasan,
+            }),
+          );
+          if (updateBooking.fulfilled.match(cancel)) {
+            swall(
+              "success",
+              "Berhasil",
+              "Booking berhasil dibatalkan",
+              false,
+              () => {
+                dispatch(clearVisit());
+                dispatch(clearMenuSales());
+                setPayloadAddMenu([
+                  {
+                    id_menu: "",
+                    qty: 0,
+                    id_penjualan_menu: null,
+                  },
+                ]);
+                clearPayloadBooking();
+                setActiveTab("home");
+                setShowDetailVisit(false);
                 getData();
               },
             );
@@ -516,6 +717,14 @@ export function Visit() {
       }),
     );
   };
+  const handleChangeTab = async (tab) => {
+    setActiveTab(tab);
+    if (tab === "booking") {
+      clearPayloadBooking();
+    } else if (tab === "kunjungan") {
+      clearPayloadVisiting();
+    }
+  };
   const getData = () => {
     dispatch(
       getListVisit({
@@ -531,27 +740,53 @@ export function Visit() {
   };
   const loadDefaultOptionsDiningTable = async () => {
     try {
-      const resultAction = await dispatch(
-        getResourceTable({
-          query: {
-            search_key: "",
-            tanggal: dayjs(
-              payloadCreateVisiting.tgl_kunjungan
-                ? payloadCreateVisiting.tgl_kunjungan
-                : new Date(),
-            ).format("YYYY-MM-DD"),
-            kapasitas: payloadCreateVisiting.jumlah_orang || "",
-          },
-        }),
-      );
-      if (getResourceTable.fulfilled.match(resultAction)) {
-        setDefaultOptionsMeja(
-          resultAction.payload.data?.list.map((v) => ({
-            label: v.label,
-            value: v.id?.toString(),
-            kapasitas: v.kapasitas?.toString(),
-          })),
+      if (activeTab === "kunjungan") {
+        const resultAction = await dispatch(
+          getResourceTable({
+            query: {
+              search_key: "",
+              tanggal: dayjs(
+                payloadCreateVisiting.tgl_kunjungan
+                  ? payloadCreateVisiting.tgl_kunjungan
+                  : new Date(),
+              ).format("YYYY-MM-DD"),
+              kapasitas: payloadCreateVisiting.jumlah_orang || "",
+            },
+          }),
         );
+        if (getResourceTable.fulfilled.match(resultAction)) {
+          setDefaultOptionsMeja(
+            resultAction.payload.data?.list.map((v) => ({
+              label: v.label,
+              value: v.id?.toString(),
+              kapasitas: v.kapasitas?.toString(),
+            })),
+          );
+        }
+      } else if (activeTab === "booking") {
+        const resultAction = await dispatch(
+          getResourceTable({
+            query: {
+              search_key: "",
+              tanggal: dayjs(
+                payloadCreateBooking.tgl_kunjungan
+                  ? payloadCreateBooking.tgl_kunjungan
+                  : new Date(),
+              ).format("YYYY-MM-DD"),
+              kapasitas: payloadCreateBooking.jumlah_orang || "",
+              jam: payloadCreateBooking.jam || "",
+            },
+          }),
+        );
+        if (getResourceTable.fulfilled.match(resultAction)) {
+          setDefaultOptionsMeja(
+            resultAction.payload.data?.list.map((v) => ({
+              label: v.label,
+              value: v.id?.toString(),
+              kapasitas: v.kapasitas?.toString(),
+            })),
+          );
+        }
       }
     } catch (err) {
       swall("error", "Gagal", err.message, false);
@@ -657,7 +892,7 @@ export function Visit() {
     loadDefaultOptionsMenu();
     loadDefaultOptionsPayment();
     loadDefaultOptionsTax();
-  }, [dispatch]);
+  }, [dispatch, activeTab]);
   useEffect(() => {
     if (messageMenu) {
       swall("success", "Berhasil", messageMenu, false, () => {
@@ -723,27 +958,10 @@ export function Visit() {
           }
         }
         dispatch(clearMessageSuccess());
-        dispatch(clearVisit());
-        dispatch(clearVisitCreated());
-        dispatch(clearMenuSales());
+        clearPayloadVisiting();
+        clearPayloadBooking();
         setShowDetailVisit(false);
-        setPayloadAddMenu([
-          {
-            id_menu: null,
-            qty: 0,
-            id_penjualan_menu: null,
-          },
-        ]);
-        setPayloadCreateVisiting({
-          tgl_kunjungan: "",
-          nama: "",
-          nomor_hp: "",
-          jumlah_orang: "",
-          id_meja: null,
-          id_metode_pembayaran: null,
-          id_pajak: null,
-        });
-        setDiningIn(false);
+        setTotalCashPayment(null);
         loadDefaultOptionsDiningTable();
         getData();
         setActiveTab("home");
@@ -838,7 +1056,7 @@ export function Visit() {
                 <Typography className="font-semibold mt-6">
                   Informasi Pesanan 
                 </Typography>
-                {(visit?.status == 2 || visit?.status == 1) && (
+                {!visit?.invoice && (
                   <Button
                     className="bg-orange-300 w-32"
                     size="sm"
@@ -903,7 +1121,7 @@ export function Visit() {
                           menuPosition="fixed"
                         />
                       </div>
-                      <div className="col-span-2">
+                      <div className="col-span-3">
                         <Input
                           disabled={loadingMenu}
                           label="Qty"
@@ -921,6 +1139,20 @@ export function Visit() {
                           }
                           required
                         />
+                      </div>
+                      <div className="col-span-1">
+                        <IconButton
+                          variant="text"
+                          onClick={() => {
+                            setPayloadAddMenu((prevData) => {
+                              const data = [...prevData];
+                              data.splice(idx, 1);
+                              return data;
+                            });
+                          }}
+                        >
+                          <XMarkIcon className="h-5" />
+                        </IconButton>
                       </div>
                     </div>
                   ))}
@@ -1002,9 +1234,10 @@ export function Visit() {
         {!loadingVisit && (
           <DialogFooter>
             <div className="flex gap-24 justify-between flex-grow">
-              <div className="flex-grow">
-                {visit?.status != 4 && (
+              <div className="w-1/2">
+                {!visit?.invoice && (
                   <AsyncSelect
+                    className="w-full"
                     isDisabled={loadingMenu}
                     placeholder="Pilih Kas"
                     loadOptions={loadOptionsCash}
@@ -1017,8 +1250,26 @@ export function Visit() {
                   />
                 )}
               </div>
+
+              <div className="w-1/2">
+                {visit?.id_metode_pembayaran == 6 &&
+                  (visit?.status == 1 || visit?.status == 2) &&
+                  !visit?.invoice && (
+                    <CurrencyInput
+                      className="h-[90%] border border-blue-gray-200 rounded w-full p-2"
+                      name="cash-payment"
+                      placeholder="Jumlah Pembayaran"
+                      decimalsLimit={2}
+                      defaultValue={totalCashPayment}
+                      onValueChange={(e) => {
+                        setTotalCashPayment(e);
+                      }}
+                    />
+                  )}
+              </div>
+
               <div className="flex gap-2">
-                {visit?.status == 4 && (
+                {visit?.status === 4 && (
                   <Button
                     variant="sm"
                     className="bg-blue-gray-400"
@@ -1028,8 +1279,38 @@ export function Visit() {
                     {loadingSingle ? <Spinner /> : "Selesai"}
                   </Button>
                 )}
-
-                {visit?.status != 4 && (
+                {visit?.status == 1 &&
+                  visit?.status_booking == 1 &&
+                  (visit?.invoice ||
+                    (!visit?.invoice && visit?.id_metode_pembayaran == 6)) && (
+                    <>
+                      <Button
+                        variant="sm"
+                        className="bg-red-400"
+                        disabled={loadingSingle || loadingMenu}
+                        onClick={handleCancelBooking}
+                      >
+                        Tolak
+                      </Button>
+                      <Button
+                        variant="sm"
+                        className="bg-green-400"
+                        onClick={handleConfirmBooking}
+                      >
+                        Setujui
+                      </Button>
+                    </>
+                  )}
+                {visit?.status == 4 && visit?.status_booking == 2 && (
+                  <Button
+                    size="sm"
+                    className="bg-green-400"
+                    onClick={handleBookingToRegistrasi}
+                  >
+                    Konfirmasi
+                  </Button>
+                )}
+                {!visit?.invoice && (
                   <>
                     <Button
                       variant="sm"
@@ -1042,7 +1323,13 @@ export function Visit() {
                     <Button
                       variant="sm"
                       className="bg-green-400"
-                      onClick={handlePayment}
+                      onClick={() => {
+                        if (visit?.status == 1) {
+                          handleBookingPayment();
+                        } else if (visit?.status == 2) {
+                          handlePayment();
+                        }
+                      }}
                       disabled={loadingSingle || loadingMenu}
                     >
                       {loadingSingle ? <Spinner /> : "Bayar"}
@@ -1063,10 +1350,32 @@ export function Visit() {
           <div className="mb-8 flex flex-col gap-4">
             <div className="flex gap-4">
               <div className="flex-grow">
-                <Input className="bg-white py-2 px-4" label="Cari" size="md" />
+                <Input
+                  className="bg-white py-2 px-4"
+                  label="Cari"
+                  size="md"
+                  value={paramVisit.search_key}
+                  onChange={(e) =>
+                    setParamVisit({
+                      ...paramVisit,
+                      search_key: e.target.value,
+                    })
+                  }
+                />
               </div>
               <div className="min-w-[200px] flex-grow">
-                <Select id="status" label="Status" className="bg-white">
+                <Select
+                  id="status"
+                  label="Status"
+                  className="bg-white"
+                  value={paramVisit.status}
+                  onChange={(e) =>
+                    setParamVisit({
+                      ...paramVisit,
+                      status: e,
+                    })
+                  }
+                >
                   <Option value="">
                     <em>None</em>
                   </Option>
@@ -1082,6 +1391,14 @@ export function Visit() {
                   id="status-booking"
                   label="Status Booking"
                   className="bg-white"
+                  value={paramVisit.status_booking}
+                  onChange={(e) => {
+                    console.log(e);
+                    setParamVisit({
+                      ...paramVisit,
+                      status_booking: e,
+                    });
+                  }}
                 >
                   <Option value="">
                     <em>None</em>
@@ -1093,16 +1410,27 @@ export function Visit() {
               </div>
             </div>
             <div className="ms-auto flex gap-4">
-              <Button className="bg-red-400" size="sm">
+              <Button
+                className="bg-red-400"
+                size="sm"
+                onClick={() =>
+                  setParamVisit({
+                    ...paramVisit,
+                    search_key: "",
+                    status: "",
+                    status_booking: "",
+                  })
+                }
+              >
                 Reset
               </Button>
-              <Button size="sm" className="bg-blue-400">
+              <Button size="sm" className="bg-blue-400" onClick={getData}>
                 Cari
               </Button>
             </div>
             <div className="ms-auto mt-2 flex gap-4">
               <Button
-                onClick={() => setActiveTab("booking")}
+                onClick={() => handleChangeTab("booking")}
                 className="bg-orange-400 flex gap-2 justify-center items-center w-48"
                 size="sm"
               >
@@ -1110,7 +1438,7 @@ export function Visit() {
                 Tambah Booking
               </Button>
               <Button
-                onClick={() => setActiveTab("kunjungan")}
+                onClick={() => handleChangeTab("kunjungan")}
                 className="bg-green-400 flex gap-2 justify-center items-center w-48"
                 size="sm"
               >
@@ -1225,7 +1553,7 @@ export function Visit() {
                           <TabPanel value={"2"}>
                             <div className="flex flex-wrap gap-1">
                               {defaultOptionsMeja
-                                ?.filter((item) => item.kapasitas == 2)
+                                ?.filter((item) => item.kapasitas <= 2)
                                 .map((item) => {
                                   return (
                                     <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
@@ -1240,7 +1568,10 @@ export function Visit() {
                           <TabPanel value={"4"}>
                             <div className="flex flex-wrap gap-1">
                               {defaultOptionsMeja
-                                ?.filter((item) => item.kapasitas == 4)
+                                ?.filter(
+                                  (item) =>
+                                    item.kapasitas <= 4 && item.kapasitas > 2,
+                                )
                                 .map((item) => {
                                   return (
                                     <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
@@ -1255,7 +1586,10 @@ export function Visit() {
                           <TabPanel value={"8"}>
                             <div className="flex flex-wrap gap-1">
                               {defaultOptionsMeja
-                                ?.filter((item) => item.kapasitas == 8)
+                                ?.filter(
+                                  (item) =>
+                                    item.kapasitas <= 8 && item.kapasitas > 4,
+                                )
                                 .map((item) => {
                                   return (
                                     <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
@@ -1270,7 +1604,7 @@ export function Visit() {
                           <TabPanel value={"12"}>
                             <div className="flex flex-wrap gap-1">
                               {defaultOptionsMeja
-                                ?.filter((item) => item.kapasitas == 12)
+                                ?.filter((item) => item.kapasitas > 8)
                                 .map((item) => {
                                   return (
                                     <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
@@ -1325,6 +1659,22 @@ export function Visit() {
                         nomor_hp: e.target.value,
                       })
                     }
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <Input
+                    label="Email"
+                    required
+                    value={payloadCreateVisiting.email}
+                    onChange={(e) =>
+                      setPayloadCreateVisiting({
+                        ...payloadCreateVisiting,
+                        email: e.target.value,
+                      })
+                    }
+                    type="email"
                   />
                 </div>
               </div>
@@ -1506,6 +1856,20 @@ export function Visit() {
                         required
                       />
                     </div>
+                    <div className="col-span-1">
+                      <IconButton
+                        variant="text"
+                        onClick={() => {
+                          setPayloadAddMenu((prevData) => {
+                            const data = [...prevData];
+                            data.splice(idx, 1);
+                            return data;
+                          });
+                        }}
+                      >
+                        <XMarkIcon className="h-5" />
+                      </IconButton>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1532,13 +1896,13 @@ export function Visit() {
               <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
                 <div className="col-span-1">
                   <Input
-                    value={payloadCreateVisiting.tgl_kunjungan}
+                    value={payloadCreateBooking.tgl_kunjungan}
                     onChange={(e) => {
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
                         tgl_kunjungan: e.target.value,
                       });
-                      loadOptionsDiningTable();
+                      loadDefaultOptionsDiningTable();
                     }}
                     type="date"
                     min={dayjs(new Date()).format("YYYY-MM-DD")}
@@ -1548,13 +1912,14 @@ export function Visit() {
                 </div>
                 <div className="col-span-1">
                   <Input
-                    value={payloadCreateVisiting.tgl_kunjungan}
-                    onChange={(e) =>
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
-                        tgl_kunjungan: e.target.value,
-                      })
-                    }
+                    value={payloadCreateBooking.jam}
+                    onChange={(e) => {
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
+                        jam: e.target.value,
+                      });
+                      loadDefaultOptionsDiningTable();
+                    }}
                     type="time"
                     label="Jam Kunjungan"
                     required
@@ -1605,35 +1970,91 @@ export function Visit() {
                         <TabsBody>
                           <TabPanel value={"2"}>
                             <div className="flex flex-wrap gap-1">
-                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
-                                <Typography className="text-white text-center">
-                                  A1
-                                </Typography>
-                              </div>
-                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
-                                <Typography className="text-white text-center">
-                                  A2
-                                </Typography>
-                              </div>
-                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
-                                <Typography className="text-white text-center">
-                                  A3
-                                </Typography>
-                              </div>
-                              <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[32.5%]">
-                                <Typography className="text-white text-center">
-                                  A4
-                                </Typography>
-                              </div>
+                              {defaultOptionsMeja
+                                ?.filter((item) => item.kapasitas <= 2)
+                                .map((item) => {
+                                  return (
+                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                      <Typography className="text-white text-center text-sm">
+                                        {item.label}
+                                      </Typography>
+                                    </div>
+                                  );
+                                })}
                             </div>
                           </TabPanel>
-                          <TabPanel value={"4"}>Kapasitas 4</TabPanel>
-                          <TabPanel value={"8"}>Kapasitas 8</TabPanel>
-                          <TabPanel value={"12"}>Kapasitas 12</TabPanel>
+                          <TabPanel value={"4"}>
+                            <div className="flex flex-wrap gap-1">
+                              {defaultOptionsMeja
+                                ?.filter(
+                                  (item) =>
+                                    item.kapasitas <= 4 && item.kapasitas > 2,
+                                )
+                                .map((item) => {
+                                  return (
+                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                      <Typography className="text-white text-center text-sm">
+                                        {item.label}
+                                      </Typography>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </TabPanel>
+                          <TabPanel value={"8"}>
+                            <div className="flex flex-wrap gap-1">
+                              {defaultOptionsMeja
+                                ?.filter(
+                                  (item) =>
+                                    item.kapasitas <= 8 && item.kapasitas > 4,
+                                )
+                                .map((item) => {
+                                  return (
+                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                      <Typography className="text-white text-center text-sm">
+                                        {item.label}
+                                      </Typography>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </TabPanel>
+                          <TabPanel value={"12"}>
+                            <div className="flex flex-wrap gap-1">
+                              {defaultOptionsMeja
+                                ?.filter((item) => item.kapasitas > 8)
+                                .map((item) => {
+                                  return (
+                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                      <Typography className="text-white text-center text-sm">
+                                        {item.label}
+                                      </Typography>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </TabPanel>
                         </TabsBody>
                       </Tabs>
                     </CardBody>
                   </Card>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <Input
+                    label="Jumlah Orang"
+                    required
+                    type="number"
+                    value={payloadCreateBooking.jumlah_orang}
+                    onChange={(e) =>
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
+                        jumlah_orang: e.target.value,
+                      })
+                    }
+                    onBlur={loadDefaultOptionsDiningTable}
+                  />
                 </div>
               </div>
             </div>
@@ -1644,10 +2065,10 @@ export function Visit() {
                   <Input
                     label="Nama Pelanggan"
                     required
-                    value={payloadCreateVisiting.nama}
+                    value={payloadCreateBooking.nama}
                     onChange={(e) =>
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
                         nama: e.target.value,
                       })
                     }
@@ -1658,10 +2079,10 @@ export function Visit() {
                     label="Nomor Hp"
                     required
                     type="number"
-                    value={payloadCreateVisiting.nomor_hp}
+                    value={payloadCreateBooking.nomor_hp}
                     onChange={(e) =>
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
                         nomor_hp: e.target.value,
                       })
                     }
@@ -1671,14 +2092,14 @@ export function Visit() {
               <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
                 <div className="col-span-1">
                   <Input
-                    label="Jumlah Orang"
+                    label="Email"
                     required
-                    type="number"
-                    value={payloadCreateVisiting.jumlah_orang}
+                    type="email"
+                    value={payloadCreateBooking.email}
                     onChange={(e) =>
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
-                        jumlah_orang: e.target.value,
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
+                        email: e.target.value,
                       })
                     }
                   />
@@ -1696,16 +2117,21 @@ export function Visit() {
                         ...base,
                         backgroundColor: "transparent",
                       }),
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
                     }}
+                    menuPortalTarget={document.getElementById("main-content")}
                     cacheOptions
                     isMulti={false}
                     loadOptions={loadOptionsDiningTable}
                     defaultOptions={defaultOptionsMeja}
-                    value={payloadCreateVisiting.id_meja?.value}
+                    value={payloadCreateBooking.id_meja}
                     onChange={(e) => {
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
-                        id_meja: e.value,
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
+                        id_meja: e,
                       });
                     }}
                   />
@@ -1718,15 +2144,20 @@ export function Visit() {
                         ...base,
                         backgroundColor: "transparent",
                       }),
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
                     }}
+                    menuPortalTarget={document.getElementById("main-content")}
                     cacheOptions
                     isMulti={false}
                     loadOptions={loadOptionsPayment}
                     defaultOptions={defaultOptionsPayment}
-                    value={payloadCreateVisiting.id_metode_pembayaran}
+                    value={payloadCreateBooking.id_metode_pembayaran}
                     onChange={(e) => {
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
                         id_metode_pembayaran: e,
                       });
                     }}
@@ -1742,34 +2173,64 @@ export function Visit() {
                         ...base,
                         backgroundColor: "transparent",
                       }),
+                      menuPortal: (base) => ({
+                        ...base,
+                        zIndex: 9999,
+                      }),
                     }}
+                    menuPortalTarget={document.getElementById("main-content")}
                     cacheOptions
                     isMulti={false}
                     loadOptions={loadOptionsTax}
                     defaultOptions={defaultOptionsTax}
-                    value={payloadCreateVisiting.id_pajak?.value}
+                    value={payloadCreateBooking.id_pajak}
                     onChange={(e) => {
-                      setPayloadCreateVisiting({
-                        ...payloadCreateVisiting,
-                        id_pajak: e.value,
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
+                        id_pajak: e,
                       });
                     }}
                   />
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 grid-flow-col gap-4 mt-2">
-              <div className="col-span-1 flex items-center">
-                <Checkbox />
-                Pesan Menu
+            <div className="mt-6">
+              <Typography>Keterangan</Typography>
+              <div className="grid grid-cols-3 grid-flow-col gap-4 mt-4">
+                <div className="col-span-1">
+                  <Textarea
+                    label="Keterangan"
+                    value={payloadCreateBooking.keteraangan}
+                    onChange={(e) =>
+                      setPayloadCreateBooking({
+                        ...payloadCreateBooking,
+                        keteraangan: e.target.value,
+                      })
+                    }
+                  />
+                </div>
               </div>
             </div>
+            {/* <div className="grid grid-cols-3 grid-flow-col gap-4 mt-2">
+              <div className="col-span-1 flex items-center">
+                <Checkbox
+                  value={payloadCreateBooking.ada_menu}
+                  onChange={(e) =>
+                    setPayloadCreateBooking({
+                      ...payloadCreateBooking,
+                      ada_menu: e.target.checked,
+                    })
+                  }
+                />
+                Pesan Menu
+              </div>
+            </div> */}
             <div className="mt-6 border-b border-blue-gray-400 pb-2 flex justify-end">
               <Button
                 className=" bg-green-400 relative w-72"
                 variant="sm"
                 disabled={loadingSingle || visitCreated}
-                onClick={() => handleCreateVisiting()}
+                onClick={() => handleCreateBooking()}
               >
                 Lanjut
               </Button>
@@ -1779,7 +2240,7 @@ export function Visit() {
                 <Spinner className="h-10 w-10" color="blue-gray" />
               </div>
             )}
-            {true && (
+            {visitCreated && (
               <div className="mt-6 pb-10">
                 <Typography>Pilihan Menu</Typography>
                 <div className="grid grid-cols-10 grid-flow-col gap-2 mt-4">
@@ -1810,18 +2271,22 @@ export function Visit() {
                             ...base,
                             backgroundColor: "transparent",
                           }),
+                          option: (base) => ({
+                            ...base,
+                          }),
                         }}
+                        menuPosition="fixed"
                         cacheOptions
                         isMulti={false}
                         loadOptions={loadOptionsMenu}
                         defaultOptions={defaultOptionsMenu}
-                        value={payloadAddMenu[idx].id_menu?.value}
+                        value={payloadAddMenu[idx].id_menu}
                         onChange={(e) => {
                           setPayloadAddMenu((prevData) => {
                             const data = [...prevData];
                             data[idx] = {
-                              ...data,
-                              id_menu: e.value,
+                              ...data[idx],
+                              id_menu: e,
                               id_penjualan_menu: null,
                             };
                             return data;
@@ -1846,6 +2311,20 @@ export function Visit() {
                         }
                         required
                       />
+                    </div>
+                    <div className="col-span-1">
+                      <IconButton
+                        variant="text"
+                        onClick={() => {
+                          setPayloadAddMenu((prevData) => {
+                            const data = [...prevData];
+                            data.splice(idx, 1);
+                            return data;
+                          });
+                        }}
+                      >
+                        <XMarkIcon className="h-5" />
+                      </IconButton>
                     </div>
                   </div>
                 ))}

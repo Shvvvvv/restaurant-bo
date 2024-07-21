@@ -11,6 +11,9 @@ import { ChevronRightIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { CalendarDaysIcon } from "@heroicons/react/24/solid";
 
 export default function DatePicker({ value, setDate, label }) {
+  const handleSelectedDate = (date) => {
+    setDate(date);
+  };
   return (
     <div>
       <Popover placement="bottom">
@@ -31,7 +34,7 @@ export default function DatePicker({ value, setDate, label }) {
           <DayPicker
             mode="single"
             selected={value}
-            onSelect={(e) => handleSelectedDateTime()}
+            onSelect={(e) => handleSelectedDate(e)}
             showOutsideDays
             className="border-0"
             classNames={{

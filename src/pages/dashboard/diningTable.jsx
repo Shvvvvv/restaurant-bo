@@ -295,6 +295,7 @@ export function DiningTable() {
           <div className="flex flex-wrap gap-4">
             <Input
               label="Nama Meja"
+              required
               className="w-full"
               value={payloadDiningTable.nama_meja}
               onChange={(e) =>
@@ -306,6 +307,7 @@ export function DiningTable() {
             />
             <Input
               label="Nomor Meja"
+              required
               className="w-full"
               value={payloadDiningTable.nomor}
               onChange={(e) =>
@@ -318,6 +320,7 @@ export function DiningTable() {
             <div className="min-w-[200px] w-full">
               <Select
                 disabled={diningTable}
+                required
                 id="status-meja"
                 label="Status"
                 value={payloadDiningTable.status}
@@ -336,7 +339,19 @@ export function DiningTable() {
                 <Option value="3">Dipesan</Option>
               </Select>
             </div>
-            <Select
+            <Input
+              label="Kapasitas"
+              required
+              type="number"
+              value={payloadDiningTable.kapasitas}
+              onChange={(e) =>
+                setPayloadDiningTable({
+                  ...payloadDiningTable,
+                  kapasitas: e.target.value,
+                })
+              }
+            />
+            {/* <Select
               id="kapasitas-meja"
               label="Kapasitas"
               value={payloadDiningTable.kapasitas}
@@ -351,7 +366,7 @@ export function DiningTable() {
               <Option value={4}>4</Option>
               <Option value={8}>8</Option>
               <Option value={12}>12</Option>
-            </Select>
+            </Select> */}
           </div>
         </DialogBody>
         <DialogFooter>

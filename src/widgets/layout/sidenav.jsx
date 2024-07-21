@@ -11,6 +11,7 @@ import {
 import { useMaterialTailwindController, setOpenSidenav } from "@/context";
 import { useState } from "react";
 import { ChevronDownIcon } from "@heroicons/react/24/solid";
+import swall from "@/configs/sweetalert";
 
 export function Sidenav({ brandImg, brandName, routes }) {
   const [controller, dispatch] = useMaterialTailwindController();
@@ -28,6 +29,21 @@ export function Sidenav({ brandImg, brandName, routes }) {
     } else {
       setActiveCollapse((prev) => [...prev, name]);
     }
+  };
+
+  const handleSignOut = () => {
+    swall(
+      "warning",
+      "Peringatan",
+      "Apakah anda yakin untuk keluar?",
+      true,
+      (e) => {
+        if (e.isConfirmed) {
+          localStorage.clear();
+          window.location.reload();
+        }
+      },
+    );
   };
 
   return (
@@ -73,30 +89,46 @@ export function Sidenav({ brandImg, brandName, routes }) {
             {pages.map(({ icon, name, path, children }) => {
               return !children ? (
                 <li key={name}>
-                  <NavLink to={`/${layout}${path}`}>
-                    {({ isActive }) => (
-                      <Button
-                        variant={isActive ? "gradient" : "text"}
-                        color={
-                          isActive
-                            ? sidenavColor
-                            : sidenavType === "dark"
-                            ? "white"
-                            : "blue-gray"
-                        }
-                        className="flex items-center gap-4 px-4 capitalize"
-                        fullWidth
+                  {name === "sign out" ? (
+                    <Button
+                      fullWidth
+                      className="flex items-center gap-4 px-4 capitalize"
+                      variant="text"
+                      onClick={handleSignOut}
+                    >
+                      <Typography
+                        color="inherit"
+                        className="font-medium capitalize"
                       >
-                        {icon}
-                        <Typography
-                          color="inherit"
-                          className="font-medium capitalize"
+                        {name}
+                      </Typography>
+                    </Button>
+                  ) : (
+                    <NavLink to={`/${layout}${path}`}>
+                      {({ isActive }) => (
+                        <Button
+                          variant={isActive ? "gradient" : "text"}
+                          color={
+                            isActive
+                              ? sidenavColor
+                              : sidenavType === "dark"
+                              ? "white"
+                              : "blue-gray"
+                          }
+                          className="flex items-center gap-4 px-4 capitalize"
+                          fullWidth
                         >
-                          {name}
-                        </Typography>
-                      </Button>
-                    )}
-                  </NavLink>
+                          {icon}
+                          <Typography
+                            color="inherit"
+                            className="font-medium capitalize"
+                          >
+                            {name}
+                          </Typography>
+                        </Button>
+                      )}
+                    </NavLink>
+                  )}
                 </li>
               ) : (
                 <li key={name}>

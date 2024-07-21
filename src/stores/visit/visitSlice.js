@@ -33,16 +33,24 @@ const initialState = {
 export const getVisit = get("GET_VISIT", "kunjungan/kunjungan-by-id");
 export const getListVisit = get("GET_LIST_VISIT", "kunjungan/list-filter");
 export const addVisit = post("CREATE_VISIT", "kunjungan/registrasi");
-export const updateVisit = put("EDIT_VISIT", "kunjungan/update");
-export const removeVisit = doDelete("DELETE_VISIT", "kunjungan/delete");
 export const sales = post("SALES", "penjualan/create");
 export const visitPayment = put("VISIT_PAYMENT", "kunjungan/bayar-kunjungan");
+export const bookingPayment = put(
+  "BOOKING_PAYMENT",
+  "kunjungan/bayar-kunjungan-booking",
+);
 export const finishedVisit = put(
   "FINISHED_VISIT",
   "kunjungan/selesai-kunjungan",
 );
 export const cancelVisit = put("CANCEL_VISIT", "kunjungan/batal-kunjungan");
 export const printBill = getBlob("PRINT_BILL", "kunjungan/cetak-tagihan");
+export const addBooking = post("CREATE_BOOKING", "kunjungan/booking");
+export const updateBooking = put("UPDATE_BOOKING", "kunjungan/update-boooking");
+export const bookingToRegistrasi = put(
+  "BOOKING_TO_REGISTRASI",
+  "kunjungan/booking-to-registrasi",
+);
 
 const visitSlice = createSlice({
   name: "visit",
@@ -142,43 +150,24 @@ const visitSlice = createSlice({
       state.error = action.payload.message;
     });
 
-    //update visit
-    builder.addCase(updateVisit.pending, (state) => {
-      state.loading = true;
+    //add booking
+    builder.addCase(addBooking.pending, (state) => {
+      state.loadingSingle = true;
       state.error = null;
     });
-    builder.addCase(updateVisit.fulfilled, (state, action) => {
-      state.loading = false;
+    builder.addCase(addBooking.fulfilled, (state, action) => {
+      state.loadingSingle = false;
       const res = action.payload;
       if (res.status) {
         state.message = res.message;
+        state.visitCreated = res.data;
         state.error = null;
       } else {
         state.error = res.message;
       }
     });
-    builder.addCase(updateVisit.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload.message;
-    });
-
-    //remove visit
-    builder.addCase(removeVisit.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(removeVisit.fulfilled, (state, action) => {
-      state.loading = false;
-      const res = action.payload;
-      if (res.status) {
-        state.message = res.message;
-        state.error = null;
-      } else {
-        state.error = res.message;
-      }
-    });
-    builder.addCase(removeVisit.rejected, (state, action) => {
-      state.loading = false;
+    builder.addCase(addBooking.rejected, (state, action) => {
+      state.loadingSingle = false;
       state.error = action.payload.message;
     });
 
@@ -218,6 +207,26 @@ const visitSlice = createSlice({
       }
     });
     builder.addCase(visitPayment.rejected, (state, action) => {
+      state.loadingSingle = false;
+      state.error = action.payload.message;
+    });
+
+    //booking payment
+    builder.addCase(bookingPayment.pending, (state) => {
+      state.loadingSingle = true;
+      state.error = null;
+    });
+    builder.addCase(bookingPayment.fulfilled, (state, action) => {
+      state.loadingSingle = false;
+      const res = action.payload;
+      if (res.status) {
+        state.messageSuccess = res.message;
+        state.error = null;
+      } else {
+        state.error = res.message;
+      }
+    });
+    builder.addCase(bookingPayment.rejected, (state, action) => {
       state.loadingSingle = false;
       state.error = action.payload.message;
     });
