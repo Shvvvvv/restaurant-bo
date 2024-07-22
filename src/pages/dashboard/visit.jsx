@@ -1286,7 +1286,7 @@ export function Visit() {
                       </Button>
                     </>
                   )}
-                {visit?.status == 4 && visit?.status_booking == 2 && (
+                {visit?.status == 1 && visit?.status_booking == 2 && (
                   <Button
                     size="sm"
                     className="bg-green-400"
