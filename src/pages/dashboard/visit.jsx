@@ -314,7 +314,6 @@ export function Visit() {
       id_meja: null,
       id_metode_pembayaran: null,
       id_pajak: null,
-      email: "",
     });
     setDiningIn(false);
     setSelectedCash(null);
@@ -1021,15 +1020,25 @@ export function Visit() {
                 <div className="cols-span-2">Nomor Hp</div>
                 <div className="cols-span-2">: {visit?.nomor_hp}</div>
               </div>
+              <div className="grid grid-cols-3 grid-flow-col mt-2">
+                <div className="cols-span-2">Email</div>
+                <div className="cols-span-2">: {visit?.email}</div>
+              </div>
               {!visit?.take_away && (
                 <div className="grid grid-cols-3 grid-flow-col mt-2">
                   <div className="cols-span-2">Meja</div>
-                  <div className="cols-span-2">: {visit?.nama_meja}</div>
+                  <div className="cols-span-2">
+                    : {visit?.nama_meja} - {visit?.nomor}
+                  </div>
                 </div>
               )}
               <div className="grid grid-cols-3 grid-flow-col mt-2">
                 <div className="cols-span-2">Jumlah Orang</div>
                 <div className="cols-span-2">: {visit?.jumlah_orang}</div>
+              </div>
+              <div className="grid grid-cols-3 grid-flow-col mt-2">
+                <div className="cols-span-2">Jam</div>
+                <div className="cols-span-2">: {visit?.jam}</div>
               </div>
               <div className="grid grid-cols-3 grid-flow-col mt-2">
                 <div className="cols-span-2">Metode Pembayaran</div>
@@ -1054,7 +1063,7 @@ export function Visit() {
               </div>
               <div className="flex justify-between items-baseline my-4">
                 <Typography className="font-semibold mt-6">
-                  Informasi Pesanan 
+                  Informasi Pesanan
                 </Typography>
                 {!visit?.invoice && (
                   <Button

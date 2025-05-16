@@ -599,7 +599,7 @@ export function Cash() {
               onChange={(e) =>
                 setPayloadCash({
                   ...payloadCash,
-                  nama_kas: e,
+                  nama_kas: e.target.value,
                 })
               }
             />
