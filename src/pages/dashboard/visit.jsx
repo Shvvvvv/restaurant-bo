@@ -1262,8 +1262,8 @@ export function Visit() {
 
               <div className="w-1/2">
                 {visit?.id_metode_pembayaran == 6 &&
-                  (visit?.status == 1 || visit?.status == 2) &&
-                  !visit?.invoice && (
+                  (visit?.status == 1 || visit?.status == 2) && !visit?.invoice && (visit?.invoice ||
+                    (!visit?.invoice && visit?.id_metode_pembayaran == 6)) && (
                     <CurrencyInput
                       className="h-[90%] border border-blue-gray-200 rounded w-full p-2"
                       name="cash-payment"
