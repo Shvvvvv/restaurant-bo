@@ -1289,9 +1289,7 @@ export function Visit() {
                   </Button>
                 )}
                 {visit?.status == 1 &&
-                  visit?.status_booking == 1 &&
-                  (visit?.invoice ||
-                    (!visit?.invoice && visit?.id_metode_pembayaran == 6)) && (
+                  visit?.status_booking == 1 && (
                     <>
                       <Button
                         variant="sm"
@@ -1319,32 +1317,34 @@ export function Visit() {
                     Konfirmasi
                   </Button>
                 )}
-                {!visit?.invoice && (
-                  <>
-                    <Button
-                      variant="sm"
-                      className="bg-red-400"
-                      disabled={loadingSingle || loadingMenu}
-                      onClick={handleCancelPayment}
-                    >
-                      Batal
-                    </Button>
-                    <Button
-                      variant="sm"
-                      className="bg-green-400"
-                      onClick={() => {
-                        if (visit?.status == 1) {
-                          handleBookingPayment();
-                        } else if (visit?.status == 2) {
-                          handlePayment();
-                        }
-                      }}
-                      disabled={loadingSingle || loadingMenu}
-                    >
-                      {loadingSingle ? <Spinner /> : "Bayar"}
-                    </Button>
-                  </>
-                )}
+                {
+                // !visit?.invoice && (
+                //   <>
+                //     <Button
+                //       variant="sm"
+                //       className="bg-red-400"
+                //       disabled={loadingSingle || loadingMenu}
+                //       onClick={handleCancelPayment}
+                //     >
+                //       Batal
+                //     </Button>
+                //     <Button
+                //       variant="sm"
+                //       className="bg-green-400"
+                //       onClick={() => {
+                //         if (visit?.status == 1) {
+                //           handleBookingPayment();
+                //         } else if (visit?.status == 2) {
+                //           handlePayment();
+                //         }
+                //       }}
+                //       disabled={loadingSingle || loadingMenu}
+                //     >
+                //       {loadingSingle ? <Spinner /> : "Bayar"}
+                //     </Button>
+                //   </>
+                // )
+                }
               </div>
             </div>
           </DialogFooter>

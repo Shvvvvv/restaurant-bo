@@ -371,7 +371,8 @@ export function Cash() {
         dispatch(clearMessage());
         clearPayloadCash();
         setIsOpenModal(false);
-        handleClickCashCard(selectedCash?.id_kas);
+        console.log('test dulu bro', selectedCash)
+        handleClickCashCard(selectedCash);
         getData();
       });
     }
@@ -635,8 +636,8 @@ export function Cash() {
                 <Option value="">
                   <em>None</em>
                 </Option>
-                <Option value="true">Aktif</Option>
-                <Option value="false">Tidak Aktif</Option>
+                <Option value={true}>Aktif</Option>
+                <Option value={false}>Tidak Aktif</Option>
               </Select>
             </div>
             <div className="w-full flex gap-4">
@@ -646,7 +647,6 @@ export function Cash() {
                 }-600 to-black flex flex-col w-44 rounded-lg py-2 px-4 items-center justify-center gap-1 h-[5.6rem]`}
               ></div>
               <div className="flex flex-col">
-                {payloadCash.color}
                 <Typography>Pilih Warna Kartu</Typography>
                 <div className="flex gap-2 mt-2">
                   <span
