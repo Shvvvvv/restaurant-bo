@@ -29,6 +29,7 @@ import {
   printBill,
   setPage,
   updateBooking,
+  updateVisit,
   visitPayment,
 } from "@/stores/visit/visitSlice";
 import { ContainerPage } from "@/widgets/container";
@@ -274,6 +275,11 @@ export function Visit() {
     id_pajak: null,
     email: "",
   });
+  const [payloadUpdateVisiting, setPayloadUpdateVisiting] = useState({
+    id_kunjungan: "",
+    id_meja: "",
+    status: 2,
+  });
   const [payloadCreateBooking, setPayloadCreateBooking] = useState({
     tgl_kunjungan: "",
     nama: "",
@@ -348,13 +354,6 @@ export function Visit() {
         getResourceTable({
           query: {
             search_key: inputValue,
-            tanggal: dayjs(
-              payloadCreateVisiting.tgl_kunjungan
-                ? payloadCreateVisiting.tgl_kunjungan
-                : new Date(),
-            ).format("YYYY-MM-DD"),
-            kapasitas: payloadCreateVisiting.jumlah_orang,
-            jam: String(payloadCreateVisiting.jam),
           },
         }),
       );
@@ -488,6 +487,19 @@ export function Visit() {
           payloadCreateVisiting.id_metode_pembayaran.value || null,
         id_pajak: payloadCreateVisiting.id_pajak.value || null,
         take_away: !diningIn,
+      }),
+    );
+  };
+  const handleUpdateVisiting = () => {
+    console.log(payloadUpdateVisiting);
+    dispatch(
+      updateVisit({
+        ...payloadUpdateVisiting,
+        id_kunjungan: visit?.id_kunjungan,
+        id_meja:
+          payloadUpdateVisiting.id_meja?.value ||
+          payloadUpdateVisiting.id_meja?.id ||
+          null,
       }),
     );
   };
@@ -673,7 +685,8 @@ export function Visit() {
           const cancel = await dispatch(
             updateBooking({
               id_kunjungan: visit?.id_kunjungan,
-              status_booking: 3,
+              status_booking: 99,
+              status: 99,
               alasan_batal: alasan,
             }),
           );
@@ -739,53 +752,22 @@ export function Visit() {
   };
   const loadDefaultOptionsDiningTable = async () => {
     try {
-      if (activeTab === "kunjungan") {
-        const resultAction = await dispatch(
-          getResourceTable({
-            query: {
-              search_key: "",
-              tanggal: dayjs(
-                payloadCreateVisiting.tgl_kunjungan
-                  ? payloadCreateVisiting.tgl_kunjungan
-                  : new Date(),
-              ).format("YYYY-MM-DD"),
-              kapasitas: payloadCreateVisiting.jumlah_orang || "",
-            },
-          }),
+      const resultAction = await dispatch(
+        getResourceTable({
+          query: {
+            search_key: "",
+          },
+        }),
+      );
+      if (getResourceTable.fulfilled.match(resultAction)) {
+        console.log("data => ", resultAction);
+        setDefaultOptionsMeja(
+          resultAction.payload.data?.list.map((v) => ({
+            label: v.label,
+            value: v.id?.toString(),
+            kapasitas: v.kapasitas?.toString(),
+          })),
         );
-        if (getResourceTable.fulfilled.match(resultAction)) {
-          setDefaultOptionsMeja(
-            resultAction.payload.data?.list.map((v) => ({
-              label: v.label,
-              value: v.id?.toString(),
-              kapasitas: v.kapasitas?.toString(),
-            })),
-          );
-        }
-      } else if (activeTab === "booking") {
-        const resultAction = await dispatch(
-          getResourceTable({
-            query: {
-              search_key: "",
-              tanggal: dayjs(
-                payloadCreateBooking.tgl_kunjungan
-                  ? payloadCreateBooking.tgl_kunjungan
-                  : new Date(),
-              ).format("YYYY-MM-DD"),
-              kapasitas: payloadCreateBooking.jumlah_orang || "",
-              jam: payloadCreateBooking.jam || "",
-            },
-          }),
-        );
-        if (getResourceTable.fulfilled.match(resultAction)) {
-          setDefaultOptionsMeja(
-            resultAction.payload.data?.list.map((v) => ({
-              label: v.label,
-              value: v.id?.toString(),
-              kapasitas: v.kapasitas?.toString(),
-            })),
-          );
-        }
       }
     } catch (err) {
       swall("error", "Gagal", err.message, false);
@@ -864,6 +846,7 @@ export function Visit() {
         swall("error", "Gagal", err.message, false);
       }
     };
+
     const loadDefaultOptionsPayment = async () => {
       try {
         const resultAction = await dispatch(
@@ -918,6 +901,23 @@ export function Visit() {
             id_penjualan_menu: item.id_penjualan_menu,
           })),
         );
+      console.log("visit => ", visit);
+      setPayloadUpdateVisiting((oldValue) => {
+        if (visit?.id_meja) {
+          return {
+            ...oldValue,
+            id_meja: {
+              value: visit?.id_meja,
+              label: visit?.nama_meja,
+            },
+          };
+        } else {
+          return {
+            ...oldValue,
+            id_meja: "",
+          };
+        }
+      });
     }
 
     if (error) {
@@ -967,7 +967,7 @@ export function Visit() {
       });
     }
     if (messageSuccessFinished) {
-      swall("success", "Berhasil", "Kunjungan telah selesai", false, () => {
+      swall("success", "Berhasil", messageSuccessFinished, false, () => {
         dispatch(clearMessageSuccessFinished());
         setShowDetailVisit(false);
         getData();
@@ -1024,14 +1024,6 @@ export function Visit() {
                 <div className="cols-span-2">Email</div>
                 <div className="cols-span-2">: {visit?.email}</div>
               </div>
-              {!visit?.take_away && (
-                <div className="grid grid-cols-3 grid-flow-col mt-2">
-                  <div className="cols-span-2">Meja</div>
-                  <div className="cols-span-2">
-                    : {visit?.nama_meja} - {visit?.nomor}
-                  </div>
-                </div>
-              )}
               <div className="grid grid-cols-3 grid-flow-col mt-2">
                 <div className="cols-span-2">Jumlah Orang</div>
                 <div className="cols-span-2">: {visit?.jumlah_orang}</div>
@@ -1061,6 +1053,54 @@ export function Visit() {
                     : "Draft"}
                 </div>
               </div>
+              {!visit?.take_away && (
+                <div className="grid grid-cols-3 grid-flow-col mt-2">
+                  <div className="cols-span-2">Meja</div>
+                  <div className="cols-span-2 flex items-center gap-2">
+                    <span>:</span>
+                    <AsyncSelect
+                      size="sm"
+                      placeholder="Pilih Meja"
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          backgroundColor: "transparent",
+                          minHeight: "30px",
+                          width: "120px",
+                          fontSize: "10px",
+                        }),
+                        option: (base) => ({
+                          ...base,
+                        }),
+                      }}
+                      cacheOptions
+                      isMulti={false}
+                      loadOptions={loadOptionsDiningTable}
+                      defaultOptions={defaultOptionsMeja}
+                      value={payloadUpdateVisiting.id_meja}
+                      onChange={(e) => {
+                        setPayloadUpdateVisiting({
+                          id_meja: e,
+                          id_kunjungan: visit?.id_kunjungan || null,
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-10 grid-flow-col gap-2 mt-4">
+                    <div className="col-span-10 flex justify-end gap-2">
+                      <Button
+                        variant="sm"
+                        className="py-1 flex justify-center items-center bg-green-400 w-24"
+                        onClick={handleUpdateVisiting}
+                        disabled={loadingVisit}
+                      >
+                        Simpan
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-between items-baseline my-4">
                 <Typography className="font-semibold mt-6">
                   Informasi Pesanan
@@ -1075,6 +1115,7 @@ export function Visit() {
                   </Button>
                 )}
               </div>
+
               {showChangeMenu ? (
                 <div className="my-2">
                   <div className="grid grid-cols-10 grid-flow-col gap-2 mt-4">
@@ -1262,7 +1303,9 @@ export function Visit() {
 
               <div className="w-1/2">
                 {visit?.id_metode_pembayaran == 6 &&
-                  (visit?.status == 1 || visit?.status == 2) && !visit?.invoice && (visit?.invoice ||
+                  (visit?.status == 1 || visit?.status == 2) &&
+                  !visit?.invoice &&
+                  (visit?.invoice ||
                     (!visit?.invoice && visit?.id_metode_pembayaran == 6)) && (
                     <CurrencyInput
                       className="h-[90%] border border-blue-gray-200 rounded w-full p-2"
@@ -1288,26 +1331,25 @@ export function Visit() {
                     {loadingSingle ? <Spinner /> : "Selesai"}
                   </Button>
                 )}
-                {visit?.status == 1 &&
-                  visit?.status_booking == 1 && (
-                    <>
-                      <Button
-                        variant="sm"
-                        className="bg-red-400"
-                        disabled={loadingSingle || loadingMenu}
-                        onClick={handleCancelBooking}
-                      >
-                        Tolak
-                      </Button>
-                      <Button
-                        variant="sm"
-                        className="bg-green-400"
-                        onClick={handleConfirmBooking}
-                      >
-                        Setujui
-                      </Button>
-                    </>
-                  )}
+                {visit?.status == 1 && visit?.status_booking == 1 && (
+                  <>
+                    <Button
+                      variant="sm"
+                      className="bg-red-400"
+                      disabled={loadingSingle || loadingMenu}
+                      onClick={handleCancelBooking}
+                    >
+                      Tolak
+                    </Button>
+                    <Button
+                      variant="sm"
+                      className="bg-green-400"
+                      onClick={handleConfirmBooking}
+                    >
+                      Setujui
+                    </Button>
+                  </>
+                )}
                 {visit?.status == 1 && visit?.status_booking == 2 && (
                   <Button
                     size="sm"
@@ -1318,32 +1360,32 @@ export function Visit() {
                   </Button>
                 )}
                 {
-                // !visit?.invoice && (
-                //   <>
-                //     <Button
-                //       variant="sm"
-                //       className="bg-red-400"
-                //       disabled={loadingSingle || loadingMenu}
-                //       onClick={handleCancelPayment}
-                //     >
-                //       Batal
-                //     </Button>
-                //     <Button
-                //       variant="sm"
-                //       className="bg-green-400"
-                //       onClick={() => {
-                //         if (visit?.status == 1) {
-                //           handleBookingPayment();
-                //         } else if (visit?.status == 2) {
-                //           handlePayment();
-                //         }
-                //       }}
-                //       disabled={loadingSingle || loadingMenu}
-                //     >
-                //       {loadingSingle ? <Spinner /> : "Bayar"}
-                //     </Button>
-                //   </>
-                // )
+                  // !visit?.invoice && (
+                  //   <>
+                  //     <Button
+                  //       variant="sm"
+                  //       className="bg-red-400"
+                  //       disabled={loadingSingle || loadingMenu}
+                  //       onClick={handleCancelPayment}
+                  //     >
+                  //       Batal
+                  //     </Button>
+                  //     <Button
+                  //       variant="sm"
+                  //       className="bg-green-400"
+                  //       onClick={() => {
+                  //         if (visit?.status == 1) {
+                  //           handleBookingPayment();
+                  //         } else if (visit?.status == 2) {
+                  //           handlePayment();
+                  //         }
+                  //       }}
+                  //       disabled={loadingSingle || loadingMenu}
+                  //     >
+                  //       {loadingSingle ? <Spinner /> : "Bayar"}
+                  //     </Button>
+                  //   </>
+                  // )
                 }
               </div>
             </div>
@@ -1565,7 +1607,10 @@ export function Visit() {
                                 ?.filter((item) => item.kapasitas <= 2)
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>
@@ -1583,7 +1628,10 @@ export function Visit() {
                                 )
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>
@@ -1601,7 +1649,10 @@ export function Visit() {
                                 )
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>
@@ -1616,7 +1667,10 @@ export function Visit() {
                                 ?.filter((item) => item.kapasitas > 8)
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>
@@ -1983,7 +2037,10 @@ export function Visit() {
                                 ?.filter((item) => item.kapasitas <= 2)
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>
@@ -2001,7 +2058,10 @@ export function Visit() {
                                 )
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>
@@ -2019,7 +2079,10 @@ export function Visit() {
                                 )
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>
@@ -2034,7 +2097,10 @@ export function Visit() {
                                 ?.filter((item) => item.kapasitas > 8)
                                 .map((item) => {
                                   return (
-                                    <div className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]">
+                                    <div
+                                      key={item.label}
+                                      className="bg-blue-gray-600 px-2 py-1 rounded-lg w-[45%]"
+                                    >
                                       <Typography className="text-white text-center text-sm">
                                         {item.label}
                                       </Typography>

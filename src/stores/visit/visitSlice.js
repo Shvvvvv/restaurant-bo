@@ -33,6 +33,7 @@ const initialState = {
 export const getVisit = get("GET_VISIT", "kunjungan/kunjungan-by-id");
 export const getListVisit = get("GET_LIST_VISIT", "kunjungan/list-filter");
 export const addVisit = post("CREATE_VISIT", "kunjungan/registrasi");
+export const updateVisit = put("UPDATE_VISIT", "kunjungan/update");
 export const sales = post("SALES", "penjualan/create");
 export const visitPayment = put("VISIT_PAYMENT", "kunjungan/bayar-kunjungan");
 export const bookingPayment = put(
@@ -250,6 +251,27 @@ const visitSlice = createSlice({
     });
     builder.addCase(finishedVisit.rejected, (state, action) => {
       state.loadingSingle = false;
+      state.error = action.payload.message;
+    });
+
+    builder.addCase(updateVisit.pending, (state) => {
+      state.loadingVisit = true;
+      state.error = null;
+    });
+    builder.addCase(updateVisit.fulfilled, (state, action) => {
+      state.loadingVisit = false;
+      const res = action.payload;
+      if (res.status) {
+        console.log(res.message);
+        state.messageSuccessFinished = res.message;
+        console.log(state.messageSuccessFinished);
+        state.error = null;
+      } else {
+        state.error = res.message;
+      }
+    });
+    builder.addCase(updateVisit.rejected, (state, action) => {
+      state.loadingVisit = false;
       state.error = action.payload.message;
     });
   },
